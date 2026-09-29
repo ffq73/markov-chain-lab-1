@@ -1,17 +1,18 @@
-// Dynamic Simulation Sandboxes (Canvas Monte Carlo Engines)
+// High-Aesthetic Dynamic Simulation Sandboxes (Neon Canvas Monte Carlo Engines)
 window.MarkovSimulations = {
   // 1. Pólya Random Walk Sandbox (1D / 2D / 3D)
   polyWalk: {
     canvas: null,
     ctx: null,
-    dimension: 1, // 1, 2, or 3
-    p: 0.5, // forward prob for 1D
+    dimension: 1,
+    p: 0.5,
     steps: 0,
     returns: 0,
     trajectory: [],
     timer: null,
     isRunning: false,
-    speed: 30, // ms per tick
+    speed: 30,
+    rotAngle: 0.5, // 3D camera rotation angle
 
     init(canvasId) {
       this.canvas = document.getElementById(canvasId);
@@ -48,7 +49,7 @@ window.MarkovSimulations = {
     start() {
       if (this.isRunning) return;
       this.isRunning = true;
-      this.timer = setInterval(() => this.step(5), this.speed);
+      this.timer = setInterval(() => this.step(4), this.speed);
     },
 
     stop() {
@@ -69,7 +70,7 @@ window.MarkovSimulations = {
           const nextX = last.x + move;
           if (nextX === 0) this.returns++;
           this.trajectory.push({ x: nextX, t: this.steps });
-          if (this.trajectory.length > 500) this.trajectory.shift();
+          if (this.trajectory.length > 350) this.trajectory.shift();
         } else if (this.dimension === 2) {
           const rand = Math.random();
           let dx = 0, dy = 0;
@@ -80,7 +81,7 @@ window.MarkovSimulations = {
           const next = { x: last.x + dx, y: last.y + dy };
           if (next.x === 0 && next.y === 0) this.returns++;
           this.trajectory.push(next);
-          if (this.trajectory.length > 800) this.trajectory.shift();
+          if (this.trajectory.length > 500) this.trajectory.shift();
         } else {
           // 3D
           const rand = Math.random();
@@ -94,7 +95,8 @@ window.MarkovSimulations = {
           const next = { x: last.x + dx, y: last.y + dy, z: last.z + dz };
           if (next.x === 0 && next.y === 0 && next.z === 0) this.returns++;
           this.trajectory.push(next);
-          if (this.trajectory.length > 800) this.trajectory.shift();
+          if (this.trajectory.length > 500) this.trajectory.shift();
+          this.rotAngle += 0.005; // slowly rotate 3D camera
         }
       }
       this.updateStats();
@@ -122,135 +124,217 @@ window.MarkovSimulations = {
       const ctx = this.ctx;
       const w = this.canvas.width;
       const h = this.canvas.height;
-      ctx.clearRect(0, 0, w, h);
+
+      // Dark Sci-Fi background
+      ctx.fillStyle = '#090d16';
+      ctx.fillRect(0, 0, w, h);
 
       if (this.dimension === 1) {
-        // 1D Time-Trajectory view
-        ctx.strokeStyle = '#E5E7EB';
-        ctx.lineWidth = 1;
+        // 1D Time-Trajectory view with glowing neon line
+        const midY = h / 2;
+
+        // Zero line
+        ctx.strokeStyle = 'rgba(239, 68, 68, 0.4)';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([4, 4]);
         ctx.beginPath();
-        ctx.moveTo(0, h / 2);
-        ctx.lineTo(w, h / 2);
+        ctx.moveTo(0, midY); ctx.lineTo(w, midY);
         ctx.stroke();
+        ctx.setLineDash([]);
 
-        ctx.strokeStyle = '#3B82F6';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        const startT = this.trajectory[0].t;
-        const endT = this.trajectory[this.trajectory.length - 1].t || 1;
-        const spanT = Math.max(endT - startT, 50);
+        ctx.fillStyle = '#EF4444';
+        ctx.font = '10px sans-serif';
+        ctx.fillText('原点 0', 12, midY - 6);
 
-        this.trajectory.forEach((pt, i) => {
-          const px = ((pt.t - startT) / spanT) * (w - 40) + 20;
-          const py = h / 2 - pt.x * 6;
-          if (i === 0) ctx.moveTo(px, py);
-          else ctx.lineTo(px, py);
-        });
-        ctx.stroke();
+        if (this.trajectory.length > 1) {
+          const startT = this.trajectory[0].t;
+          const endT = this.trajectory[this.trajectory.length - 1].t || 1;
+          const spanT = Math.max(endT - startT, 50);
 
-        // Origin label
-        ctx.fillStyle = '#9CA3AF';
-        ctx.font = '11px sans-serif';
-        ctx.fillText('原点 0', 10, h / 2 - 5);
+          // Gradient fill under trajectory
+          const grad = ctx.createLinearGradient(0, 0, 0, h);
+          grad.addColorStop(0, 'rgba(6, 182, 212, 0.25)');
+          grad.addColorStop(0.5, 'rgba(6, 182, 212, 0.02)');
+          grad.addColorStop(1, 'rgba(6, 182, 212, 0.25)');
+
+          ctx.beginPath();
+          ctx.moveTo(20, midY);
+          this.trajectory.forEach((pt) => {
+            const px = ((pt.t - startT) / spanT) * (w - 40) + 20;
+            const py = midY - pt.x * 6;
+            ctx.lineTo(px, py);
+          });
+          const lastPt = this.trajectory[this.trajectory.length - 1];
+          const lastPx = ((lastPt.t - startT) / spanT) * (w - 40) + 20;
+          ctx.lineTo(lastPx, midY);
+          ctx.closePath();
+          ctx.fillStyle = grad;
+          ctx.fill();
+
+          // Neon stroke
+          ctx.save();
+          ctx.strokeStyle = '#06B6D4';
+          ctx.lineWidth = 2.5;
+          ctx.shadowColor = '#06B6D4';
+          ctx.shadowBlur = 10;
+          ctx.beginPath();
+          this.trajectory.forEach((pt, i) => {
+            const px = ((pt.t - startT) / spanT) * (w - 40) + 20;
+            const py = midY - pt.x * 6;
+            if (i === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+          });
+          ctx.stroke();
+
+          // Particle Head
+          const headY = midY - lastPt.x * 6;
+          ctx.beginPath();
+          ctx.arc(lastPx, headY, 5, 0, Math.PI * 2);
+          ctx.fillStyle = '#FFFFFF';
+          ctx.shadowColor = '#38BDF8';
+          ctx.shadowBlur = 15;
+          ctx.fill();
+          ctx.restore();
+        }
       } else if (this.dimension === 2) {
         // 2D Lattice Grid view
         const cx = w / 2;
         const cy = h / 2;
-        const scale = 5;
+        const scale = 5.5;
 
-        // Grid axes
-        ctx.strokeStyle = '#E5E7EB';
+        // Faint grid
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
         ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(cx, 0); ctx.lineTo(cx, h);
-        ctx.moveTo(0, cy); ctx.lineTo(w, cy);
-        ctx.stroke();
+        const gridStep = scale * 5;
+        for (let x = cx % gridStep; x < w; x += gridStep) {
+          ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+        }
+        for (let y = cy % gridStep; y < h; y += gridStep) {
+          ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+        }
 
-        // Origin marker
+        // Origin beacon
+        ctx.save();
         ctx.beginPath();
-        ctx.arc(cx, cy, 5, 0, Math.PI * 2);
+        ctx.arc(cx, cy, 6, 0, Math.PI * 2);
         ctx.fillStyle = '#EF4444';
+        ctx.shadowColor = '#EF4444';
+        ctx.shadowBlur = 15;
         ctx.fill();
+        ctx.restore();
 
-        // Path
-        ctx.strokeStyle = '#10B981';
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        this.trajectory.forEach((pt, i) => {
-          const px = cx + pt.x * scale;
-          const py = cy - pt.y * scale;
-          if (i === 0) ctx.moveTo(px, py);
-          else ctx.lineTo(px, py);
-        });
-        ctx.stroke();
+        // Path with gradient fade
+        if (this.trajectory.length > 1) {
+          ctx.save();
+          ctx.lineWidth = 1.8;
+          ctx.shadowColor = '#10B981';
+          ctx.shadowBlur = 6;
+          for (let i = 1; i < this.trajectory.length; i++) {
+            const alpha = 0.15 + 0.85 * (i / this.trajectory.length);
+            ctx.strokeStyle = `rgba(16, 185, 129, ${alpha})`;
+            ctx.beginPath();
+            ctx.moveTo(cx + this.trajectory[i - 1].x * scale, cy - this.trajectory[i - 1].y * scale);
+            ctx.lineTo(cx + this.trajectory[i].x * scale, cy - this.trajectory[i].y * scale);
+            ctx.stroke();
+          }
 
-        // Current particle
-        if (this.trajectory.length > 0) {
+          // Current particle
           const last = this.trajectory[this.trajectory.length - 1];
           ctx.beginPath();
-          ctx.arc(cx + last.x * scale, cy - last.y * scale, 4, 0, Math.PI * 2);
-          ctx.fillStyle = '#3B82F6';
+          ctx.arc(cx + last.x * scale, cy - last.y * scale, 4.5, 0, Math.PI * 2);
+          ctx.fillStyle = '#60A5FA';
+          ctx.shadowColor = '#60A5FA';
+          ctx.shadowBlur = 12;
           ctx.fill();
+          ctx.restore();
         }
       } else {
-        // 3D Isometric View
+        // 3D Isometric View with Dynamic Rotation
         const cx = w / 2;
-        const cy = h / 2 + 30;
-        const scale = 4;
+        const cy = h / 2 + 20;
+        const scale = 4.2;
 
-        // Isometric projection: isoX = (x - y) * cos(30), isoY = (x + y) * sin(30) - z
-        const cos30 = Math.cos(Math.PI / 6);
-        const sin30 = Math.sin(Math.PI / 6);
+        const theta = this.rotAngle;
+        const cosT = Math.cos(theta);
+        const sinT = Math.sin(theta);
+        const phi = 0.55; // vertical tilt
 
-        const project = (x, y, z) => ({
-          px: cx + (x - y) * cos30 * scale,
-          py: cy + (x + y) * sin30 * scale - z * scale
-        });
+        const project = (x, y, z) => {
+          const rx = x * cosT - y * sinT;
+          const ry = x * sinT + y * cosT;
+          const px = cx + rx * scale;
+          const py = cy + ry * Math.sin(phi) * scale - z * Math.cos(phi) * scale;
+          return { px, py, depth: ry };
+        };
 
-        // Axes
-        ctx.strokeStyle = '#D1D5DB';
+        // 3D Bounding Cube wireframe
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
         ctx.lineWidth = 1;
-        const o = project(0, 0, 0);
-        const axX = project(25, 0, 0);
-        const axY = project(0, 25, 0);
-        const axZ = project(0, 0, 25);
-
+        const b = 25;
+        const corners = [
+          project(-b, -b, -b), project(b, -b, -b), project(b, b, -b), project(-b, b, -b),
+          project(-b, -b, b), project(b, -b, b), project(b, b, b), project(-b, b, b)
+        ];
+        // Connect bottom
         ctx.beginPath();
-        ctx.moveTo(o.px, o.py); ctx.lineTo(axX.px, axX.py);
-        ctx.moveTo(o.px, o.py); ctx.lineTo(axY.px, axY.py);
-        ctx.moveTo(o.px, o.py); ctx.lineTo(axZ.px, axZ.py);
+        ctx.moveTo(corners[0].px, corners[0].py);
+        ctx.lineTo(corners[1].px, corners[1].py);
+        ctx.lineTo(corners[2].px, corners[2].py);
+        ctx.lineTo(corners[3].px, corners[3].py);
+        ctx.closePath();
         ctx.stroke();
 
-        ctx.fillStyle = '#9CA3AF';
-        ctx.font = '10px sans-serif';
-        ctx.fillText('+X', axX.px + 4, axX.py);
-        ctx.fillText('+Y', axY.px + 4, axY.py);
-        ctx.fillText('+Z', axZ.px, axZ.py - 4);
-
-        // Origin marker
+        // Connect pillars & top
+        for (let i = 0; i < 4; i++) {
+          ctx.beginPath();
+          ctx.moveTo(corners[i].px, corners[i].py);
+          ctx.lineTo(corners[i + 4].px, corners[i + 4].py);
+          ctx.stroke();
+        }
         ctx.beginPath();
-        ctx.arc(o.px, o.py, 4, 0, Math.PI * 2);
+        ctx.moveTo(corners[4].px, corners[4].py);
+        ctx.lineTo(corners[5].px, corners[5].py);
+        ctx.lineTo(corners[6].px, corners[6].py);
+        ctx.lineTo(corners[7].px, corners[7].py);
+        ctx.closePath();
+        ctx.stroke();
+
+        // Origin Beacon
+        const o = project(0, 0, 0);
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(o.px, o.py, 5, 0, Math.PI * 2);
         ctx.fillStyle = '#EF4444';
+        ctx.shadowColor = '#EF4444';
+        ctx.shadowBlur = 12;
         ctx.fill();
+        ctx.restore();
 
         // 3D Path
-        ctx.strokeStyle = '#8B5CF6';
-        ctx.lineWidth = 1.2;
-        ctx.beginPath();
-        this.trajectory.forEach((pt, i) => {
-          const pr = project(pt.x, pt.y, pt.z);
-          if (i === 0) ctx.moveTo(pr.px, pr.py);
-          else ctx.lineTo(pr.px, pr.py);
-        });
-        ctx.stroke();
+        if (this.trajectory.length > 1) {
+          ctx.save();
+          ctx.lineWidth = 1.4;
+          for (let i = 1; i < this.trajectory.length; i++) {
+            const p1 = project(this.trajectory[i - 1].x, this.trajectory[i - 1].y, this.trajectory[i - 1].z);
+            const p2 = project(this.trajectory[i].x, this.trajectory[i].y, this.trajectory[i].z);
+            const alpha = 0.2 + 0.8 * (i / this.trajectory.length);
+            ctx.strokeStyle = `rgba(168, 85, 247, ${alpha})`;
+            ctx.beginPath();
+            ctx.moveTo(p1.px, p1.py);
+            ctx.lineTo(p2.px, p2.py);
+            ctx.stroke();
+          }
 
-        if (this.trajectory.length > 0) {
+          // Head
           const last = this.trajectory[this.trajectory.length - 1];
           const pr = project(last.x, last.y, last.z);
           ctx.beginPath();
-          ctx.arc(pr.px, pr.py, 4, 0, Math.PI * 2);
-          ctx.fillStyle = '#EC4899';
+          ctx.arc(pr.px, pr.py, 4.5, 0, Math.PI * 2);
+          ctx.fillStyle = '#F472B6';
+          ctx.shadowColor = '#F472B6';
+          ctx.shadowBlur = 10;
           ctx.fill();
+          ctx.restore();
         }
       }
     }
@@ -266,8 +350,6 @@ window.MarkovSimulations = {
     simCount: 0,
     ruinCount: 0,
     currentPaths: [],
-    timer: null,
-    isRunning: false,
 
     init(canvasId) {
       this.canvas = document.getElementById(canvasId);
@@ -284,7 +366,6 @@ window.MarkovSimulations = {
     },
 
     reset() {
-      this.stop();
       this.simCount = 0;
       this.ruinCount = 0;
       this.currentPaths = [];
@@ -296,14 +377,14 @@ window.MarkovSimulations = {
       for (let b = 0; b < batchSize; b++) {
         let fortune = this.x0;
         const path = [fortune];
-        while (fortune > 0 && fortune < this.target && path.length < 400) {
+        while (fortune > 0 && fortune < this.target && path.length < 350) {
           fortune += Math.random() < this.p ? 1 : -1;
           path.push(fortune);
         }
         this.simCount++;
         if (fortune === 0) this.ruinCount++;
         this.currentPaths.push({ path, ruined: fortune === 0 });
-        if (this.currentPaths.length > 40) this.currentPaths.shift();
+        if (this.currentPaths.length > 35) this.currentPaths.shift();
       }
       this.updateDisplay();
       this.render();
@@ -318,7 +399,6 @@ window.MarkovSimulations = {
       const empRate = this.simCount > 0 ? (this.ruinCount / this.simCount).toFixed(3) : "0.000";
       if (empEl) empEl.innerText = empRate;
 
-      // Calculate Theoretical
       const p = this.p;
       const q = 1 - p;
       let theo = 0;
@@ -338,58 +418,81 @@ window.MarkovSimulations = {
       const ctx = this.ctx;
       const w = this.canvas.width;
       const h = this.canvas.height;
-      ctx.clearRect(0, 0, w, h);
 
-      // Boundaries: 0 (ruin) at bottom, target at top
-      const topY = 30;
-      const botY = h - 30;
+      // Dark Fintech Background
+      ctx.fillStyle = '#090d16';
+      ctx.fillRect(0, 0, w, h);
+
+      const topY = 32;
+      const botY = h - 32;
       const rangeY = botY - topY;
 
-      // Draw horizontal barrier lines
+      // Winning Zone Glow
+      const winGrad = ctx.createLinearGradient(0, 0, 0, topY + 40);
+      winGrad.addColorStop(0, 'rgba(16, 185, 129, 0.15)');
+      winGrad.addColorStop(1, 'rgba(16, 185, 129, 0)');
+      ctx.fillStyle = winGrad;
+      ctx.fillRect(0, 0, w, topY + 40);
+
+      // Ruin Zone Glow
+      const ruinGrad = ctx.createLinearGradient(0, botY - 40, 0, h);
+      ruinGrad.addColorStop(0, 'rgba(239, 68, 68, 0)');
+      ruinGrad.addColorStop(1, 'rgba(239, 68, 68, 0.15)');
+      ctx.fillStyle = ruinGrad;
+      ctx.fillRect(0, botY - 40, w, 40);
+
+      // Boundaries
       ctx.strokeStyle = '#EF4444';
       ctx.lineWidth = 2;
+      ctx.shadowColor = '#EF4444';
+      ctx.shadowBlur = 8;
       ctx.beginPath();
       ctx.moveTo(0, botY); ctx.lineTo(w, botY);
       ctx.stroke();
 
       ctx.strokeStyle = '#10B981';
+      ctx.shadowColor = '#10B981';
       ctx.beginPath();
       ctx.moveTo(0, topY); ctx.lineTo(w, topY);
       ctx.stroke();
+      ctx.shadowBlur = 0;
 
       // Labels
-      ctx.fillStyle = '#EF4444';
+      ctx.fillStyle = '#F87171';
       ctx.font = 'bold 11px sans-serif';
-      ctx.fillText('破产线 (0元)', 15, botY - 8);
+      ctx.fillText('⚡ 破产深渊 (0元)', 15, botY - 8);
 
-      ctx.fillStyle = '#10B981';
-      ctx.fillText(`胜利线 (${this.target}元)`, 15, topY + 16);
+      ctx.fillStyle = '#34D399';
+      ctx.fillText(`🏆 胜出离场 (${this.target}元)`, 15, topY + 16);
 
       // Initial line
       const initY = botY - (this.x0 / this.target) * rangeY;
-      ctx.strokeStyle = '#E5E7EB';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
       ctx.lineWidth = 1;
       ctx.setLineDash([4, 4]);
       ctx.beginPath();
       ctx.moveTo(0, initY); ctx.lineTo(w, initY);
       ctx.stroke();
       ctx.setLineDash([]);
-      ctx.fillStyle = '#6B7280';
-      ctx.fillText(`初始本金 (${this.x0}元)`, 15, initY - 5);
+      ctx.fillStyle = '#94A3B8';
+      ctx.font = '10px sans-serif';
+      ctx.fillText(`起跑本金 (${this.x0}元)`, 15, initY - 5);
 
       // Draw paths
       this.currentPaths.forEach(item => {
-        ctx.strokeStyle = item.ruined ? 'rgba(239, 68, 68, 0.45)' : 'rgba(16, 185, 129, 0.5)';
-        ctx.lineWidth = 1.2;
+        ctx.save();
+        ctx.strokeStyle = item.ruined ? 'rgba(248, 113, 113, 0.45)' : 'rgba(52, 211, 153, 0.55)';
+        ctx.lineWidth = 1.3;
         ctx.beginPath();
-        const maxSteps = Math.max(item.path.length, 60);
+        const maxSteps = Math.max(item.path.length, 50);
         item.path.forEach((val, step) => {
-          const px = (step / maxSteps) * (w - 60) + 30;
+          const px = (step / maxSteps) * (w - 70) + 35;
           const py = botY - (val / this.target) * rangeY;
           if (step === 0) ctx.moveTo(px, py);
           else ctx.lineTo(px, py);
         });
         ctx.stroke();
+        ctx.restore();
       });
     }
   },
@@ -398,7 +501,7 @@ window.MarkovSimulations = {
   tomJerry: {
     canvas: null,
     ctx: null,
-    mode: 'positive', // 'positive', 'null', 'transient'
+    mode: 'positive',
     pValues: [],
     runLength: 0,
     history: [],
@@ -420,17 +523,13 @@ window.MarkovSimulations = {
       this.history = [{ step: 0, run: 0, prod: 1 }];
       this.infiniteProduct = 1;
 
-      // Precompute 100 values of p_i
       this.pValues = [];
       for (let i = 0; i < 200; i++) {
         if (m === 'positive') {
-          // p_i = 0.3 constant (positive recurrent)
           this.pValues.push(0.35);
         } else if (m === 'null') {
-          // p_i = 1 / (i + 2) (null recurrent, sum diverges, mean time infinite)
           this.pValues.push(1 / (i + 2));
         } else {
-          // p_i = 1 / (i + 2)^2 (transient, sum converges, infinite product > 0)
           this.pValues.push(1 / Math.pow(i + 2, 2));
         }
       }
@@ -457,14 +556,11 @@ window.MarkovSimulations = {
       const rand = Math.random();
 
       if (rand < pFail) {
-        // Failed! Drop back to 0
         this.runLength = 0;
       } else {
-        // Success! Run grows by 1
         this.runLength++;
       }
 
-      // Update infinite product up to current run
       let prod = 1;
       for (let i = 0; i <= this.runLength; i++) {
         prod *= (1 - this.pValues[i]);
@@ -476,7 +572,7 @@ window.MarkovSimulations = {
         run: this.runLength,
         prod: prod
       });
-      if (this.history.length > 250) this.history.shift();
+      if (this.history.length > 200) this.history.shift();
 
       this.updateDisplay();
       this.render();
@@ -491,14 +587,14 @@ window.MarkovSimulations = {
       if (prodEl) prodEl.innerText = this.infiniteProduct.toFixed(4);
       if (regimeEl) {
         if (this.mode === 'positive') {
-          regimeEl.innerText = "正常返 (Positive Recurrent) - 期望回访时间有限";
-          regimeEl.className = "font-bold text-emerald-600";
+          regimeEl.innerText = "正常返 (Positive Recurrent) · 平均回访步数有限";
+          regimeEl.className = "font-bold text-emerald-400";
         } else if (this.mode === 'null') {
-          regimeEl.innerText = "零常返 (Null Recurrent) - 必回访但平均时间无穷";
-          regimeEl.className = "font-bold text-amber-600";
+          regimeEl.innerText = "零常返 (Null Recurrent) · 必回访但平均时间无穷";
+          regimeEl.className = "font-bold text-amber-400";
         } else {
-          regimeEl.innerText = "非常返 (Transient) - 连胜无限逃逸，回访概率 < 1";
-          regimeEl.className = "font-bold text-rose-600";
+          regimeEl.innerText = "非常返 (Transient) · 连胜逃逸，回访概率 < 1";
+          regimeEl.className = "font-bold text-rose-400";
         }
       }
     },
@@ -508,31 +604,50 @@ window.MarkovSimulations = {
       const ctx = this.ctx;
       const w = this.canvas.width;
       const h = this.canvas.height;
-      ctx.clearRect(0, 0, w, h);
 
-      // Plot run lengths as bar / line
-      const maxRun = Math.max(15, ...this.history.map(d => d.run));
+      ctx.fillStyle = '#090d16';
+      ctx.fillRect(0, 0, w, h);
+
+      const maxRun = Math.max(16, ...this.history.map(d => d.run));
       const padL = 40, padR = 20, padB = 30, padT = 20;
       const chartW = w - padL - padR;
       const chartH = h - padT - padB;
 
-      // Axes
-      ctx.strokeStyle = '#E5E7EB';
+      // Coordinate axes
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(padL, padT); ctx.lineTo(padL, h - padB);
       ctx.lineTo(w - padR, h - padB);
       ctx.stroke();
 
-      // Axis labels
-      ctx.fillStyle = '#9CA3AF';
+      ctx.fillStyle = '#64748B';
       ctx.font = '10px sans-serif';
-      ctx.fillText(`连胜长度 max: ${maxRun}`, padL + 10, padT + 12);
-      ctx.fillText('时间步 (Steps)', w - 80, h - 10);
+      ctx.fillText(`连胜长度 (max: ${maxRun})`, padL + 8, padT + 12);
 
-      // Line path
+      // Area fill
+      const grad = ctx.createLinearGradient(0, padT, 0, h - padB);
+      grad.addColorStop(0, 'rgba(245, 158, 11, 0.35)');
+      grad.addColorStop(1, 'rgba(245, 158, 11, 0.02)');
+
+      ctx.beginPath();
+      ctx.moveTo(padL, h - padB);
+      this.history.forEach((d, i) => {
+        const px = padL + (i / this.history.length) * chartW;
+        const py = (h - padB) - (d.run / maxRun) * chartH;
+        ctx.lineTo(px, py);
+      });
+      ctx.lineTo(padL + chartW, h - padB);
+      ctx.closePath();
+      ctx.fillStyle = grad;
+      ctx.fill();
+
+      // Glowing Line
+      ctx.save();
       ctx.strokeStyle = '#F59E0B';
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 2.2;
+      ctx.shadowColor = '#F59E0B';
+      ctx.shadowBlur = 8;
       ctx.beginPath();
       this.history.forEach((d, i) => {
         const px = padL + (i / this.history.length) * chartW;
@@ -541,6 +656,7 @@ window.MarkovSimulations = {
         else ctx.lineTo(px, py);
       });
       ctx.stroke();
+      ctx.restore();
     }
   },
 
@@ -584,7 +700,6 @@ window.MarkovSimulations = {
       }
     },
 
-    // Sample from Poisson(lambda)
     poissonSample(lam) {
       const L = Math.exp(-lam);
       let k = 0;
@@ -601,12 +716,11 @@ window.MarkovSimulations = {
       if (this.queue === 0) {
         this.queue = arrivals;
       } else {
-        // 1 customer served, new arrivals added
         this.queue = this.queue - 1 + arrivals;
       }
 
       this.history.push({ step: this.history.length, q: this.queue });
-      if (this.history.length > 250) this.history.shift();
+      if (this.history.length > 200) this.history.shift();
 
       this.updateDisplay();
       this.render();
@@ -619,18 +733,18 @@ window.MarkovSimulations = {
 
       if (qEl) qEl.innerText = this.queue;
       const drift = (this.lambda - 1).toFixed(2);
-      if (driftEl) driftEl.innerText = `${drift} (每步平均增量)`;
+      if (driftEl) driftEl.innerText = `${drift} (单步期望增量)`;
 
       if (statusEl) {
         if (this.lambda < 0.99) {
-          statusEl.innerText = "正常返 (λ < 1) - 负漂移，队伍快速自我清空";
-          statusEl.className = "font-bold text-emerald-600";
+          statusEl.innerText = "正常返 (λ < 1) · 强负漂移，队列快速清空";
+          statusEl.className = "font-bold text-emerald-400";
         } else if (this.lambda <= 1.01) {
-          statusEl.innerText = "零常返 (λ = 1) - 零漂移，队伍漫游但最终会回0";
-          statusEl.className = "font-bold text-amber-600";
+          statusEl.innerText = "零常返 (λ = 1) · 零漂移临界态，长程游走";
+          statusEl.className = "font-bold text-amber-400";
         } else {
-          statusEl.innerText = "非常返 (λ > 1) - 正漂移，队伍向无穷大爆炸逃逸！";
-          statusEl.className = "font-bold text-rose-600";
+          statusEl.innerText = "非常返 (λ > 1) · 正漂移失控，队列向无穷大爆炸！";
+          statusEl.className = "font-bold text-rose-400";
         }
       }
     },
@@ -640,27 +754,50 @@ window.MarkovSimulations = {
       const ctx = this.ctx;
       const w = this.canvas.width;
       const h = this.canvas.height;
-      ctx.clearRect(0, 0, w, h);
 
-      const maxQ = Math.max(15, ...this.history.map(d => d.q));
-      const padL = 40, padR = 20, padB = 30, padT = 20;
+      ctx.fillStyle = '#090d16';
+      ctx.fillRect(0, 0, w, h);
+
+      // Top: Animated Customer Queue visual buffer
+      const bufferY = 28;
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+      ctx.fillRect(30, bufferY, w - 60, 24);
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+      ctx.strokeRect(30, bufferY, w - 60, 24);
+
+      // Customer beads
+      const beadCount = Math.min(this.queue, 40);
+      for (let i = 0; i < beadCount; i++) {
+        ctx.beginPath();
+        ctx.arc(42 + i * 11, bufferY + 12, 4, 0, Math.PI * 2);
+        ctx.fillStyle = this.lambda > 1 ? '#F43F5E' : '#38BDF8';
+        ctx.fill();
+      }
+
+      ctx.fillStyle = '#94A3B8';
+      ctx.font = '10px sans-serif';
+      ctx.fillText(`服务台排队视窗 (现有人数: ${this.queue})`, 32, bufferY - 8);
+
+      // Bottom: Chart
+      const maxQ = Math.max(16, ...this.history.map(d => d.q));
+      const padL = 40, padR = 20, padB = 26, padT = 75;
       const chartW = w - padL - padR;
       const chartH = h - padT - padB;
 
-      // Axes
-      ctx.strokeStyle = '#E5E7EB';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(padL, padT); ctx.lineTo(padL, h - padB);
       ctx.lineTo(w - padR, h - padB);
       ctx.stroke();
 
-      ctx.fillStyle = '#9CA3AF';
-      ctx.font = '10px sans-serif';
-      ctx.fillText(`排队人数 (max: ${maxQ})`, padL + 10, padT + 12);
+      // Chart area
+      ctx.save();
+      const grad = ctx.createLinearGradient(0, padT, 0, h - padB);
+      const isBurst = this.lambda > 1;
+      grad.addColorStop(0, isBurst ? 'rgba(244, 63, 94, 0.35)' : 'rgba(56, 189, 248, 0.35)');
+      grad.addColorStop(1, 'rgba(0,0,0,0)');
 
-      // Area fill
-      ctx.fillStyle = this.lambda > 1 ? 'rgba(239, 68, 68, 0.15)' : 'rgba(59, 130, 246, 0.15)';
       ctx.beginPath();
       ctx.moveTo(padL, h - padB);
       this.history.forEach((d, i) => {
@@ -670,11 +807,14 @@ window.MarkovSimulations = {
       });
       ctx.lineTo(padL + chartW, h - padB);
       ctx.closePath();
+      ctx.fillStyle = grad;
       ctx.fill();
 
-      // Line
-      ctx.strokeStyle = this.lambda > 1 ? '#EF4444' : '#3B82F6';
-      ctx.lineWidth = 2;
+      // Stroke
+      ctx.strokeStyle = isBurst ? '#F43F5E' : '#38BDF8';
+      ctx.lineWidth = 2.2;
+      ctx.shadowColor = isBurst ? '#F43F5E' : '#38BDF8';
+      ctx.shadowBlur = 8;
       ctx.beginPath();
       this.history.forEach((d, i) => {
         const px = padL + (i / this.history.length) * chartW;
@@ -683,6 +823,7 @@ window.MarkovSimulations = {
         else ctx.lineTo(px, py);
       });
       ctx.stroke();
+      ctx.restore();
     }
   }
 };

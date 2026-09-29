@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>离散时间马尔科夫链 · 全景可视化讲义与显微镜证明工作台</title>
+  
+  <!-- Tailwind CSS via allowlisted CDN -->
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  
+  <!-- MathJax Configuration for KaTeX-Grade Math Typesetting -->
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']],
+        processEscapes: true
+      },
+      options: {
+        skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+      }
+    };
+  </script>
+  <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 7px; height: 7px; }
+    ::-webkit-scrollbar-track { background: #0b0f19; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+    /* Cosmic Ambient Glows */
+    .glow-cyan {
+      box-shadow: 0 0 25px -5px rgba(6, 182, 212, 0.4);
+    }
+    .glow-blue {
+      box-shadow: 0 0 30px -5px rgba(59, 130, 246, 0.35);
+    }
+    .glow-amber {
+      box-shadow: 0 0 25px -5px rgba(245, 158, 11, 0.3);
+    }
+    
+    /* Math Formula Typography */
+    .mjx-chtml {
+      font-size: 104% !important;
+      color: #E2E8F0 !important;
+    }
+
+    /* Glassmorphism styling */
+    .glass-card {
+      background: rgba(15, 23, 42, 0.72);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .glass-card-hover:hover {
+      background: rgba(22, 33, 56, 0.85);
+      border-color: rgba(59, 130, 246, 0.35);
+    }
+  </style>
+</head>
+<body class="bg-[#090d16] text-slate-100 font-sans antialiased min-h-screen flex flex-col selection:bg-blue-600 selection:text-white">
+
+  <!-- Ambient Light Orbs -->
+  <div class="fixed top-0 left-1/4 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none -z-10"></div>
+  <div class="fixed bottom-0 right-1/4 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl pointer-events-none -z-10"></div>
+
+  <!-- Top Glass Navigation Bar -->
+  <header class="bg-[#0f172a]/80 backdrop-blur-xl border-b border-slate-800/80 sticky top-0 z-40 shadow-xl">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        
+        <!-- Brand & Title -->
+        <div class="flex items-center space-x-3.5">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 via-blue-600 to-indigo-600 flex items-center justify-center text-white font-extrabold text-xl shadow-lg glow-blue">
+            <span class="tracking-tighter">MC</span>
+          </div>
+          <div>
+            <h1 class="text-sm sm:text-base font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-sky-300 via-blue-200 to-indigo-300">
+              马尔科夫链 · 全景可视化讲义与显微镜工作台
+            </h1>
+            <div class="flex items-center space-x-2 text-[11px] text-slate-400">
+              <span>戴雄平《应用随机过程》第1章</span>
+              <span>·</span>
+              <span class="text-emerald-400 font-medium">数学初学者友好 & 零跳步推导</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Global Progress Tracker -->
+        <div class="hidden xl:flex items-center space-x-3 bg-slate-900/80 border border-slate-800 rounded-xl px-3.5 py-1.5">
+          <div class="text-[11px] text-slate-400">学习进度：</div>
+          <div class="w-28 h-2 bg-slate-800 rounded-full overflow-hidden">
+            <div id="global-progress-bar" class="h-full bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full transition-all duration-300" style="width: 0%;"></div>
+          </div>
+          <span id="global-progress-text" class="text-xs font-mono font-bold text-sky-400">0 / 71</span>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <nav class="flex space-x-1 bg-slate-900/90 border border-slate-800 p-1 rounded-xl shadow-inner">
+          <button data-view="graph" class="nav-tab-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-600/90 text-white transition flex items-center space-x-1.5 shadow-sm">
+            <span>🌐</span>
+            <span>拓扑星系</span>
+          </button>
+          <button data-view="stepper" class="nav-tab-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:bg-slate-800/60 transition flex items-center space-x-1.5">
+            <span>🔬</span>
+            <span>显微镜证明</span>
+          </button>
+          <button data-view="sim" class="nav-tab-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:bg-slate-800/60 transition flex items-center space-x-1.5">
+            <span>🎲</span>
+            <span>动态仿真沙盒</span>
+          </button>
+          <button data-view="codex" class="nav-tab-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:bg-slate-800/60 transition flex items-center space-x-1.5">
+            <span>📚</span>
+            <span>全量字典</span>
+          </button>
+        </nav>
+
+        <!-- Search Box & Filter -->
+        <div class="hidden md:flex items-center space-x-2">
+          <div class="relative">
+            <input type="text" id="global-search" placeholder="检索定理、引理、习题、概念..." 
+              class="w-44 lg:w-56 pl-8 pr-3 py-1.5 text-xs bg-slate-900 border border-slate-700/80 rounded-lg text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition" />
+            <span class="absolute left-2.5 top-2 text-slate-500 text-xs">🔍</span>
+          </div>
+          <select id="filter-section" class="text-xs border border-slate-700/80 rounded-lg px-2.5 py-1.5 bg-slate-900 text-slate-300 focus:outline-none focus:ring-2 focus:ring-sky-500">
+            <option value="all">全章节 (§1.1-§1.5)</option>
+            <option value="1.1">§1.1 基础概念与分类</option>
+            <option value="1.2">§1.2 常返与非常返</option>
+            <option value="1.3">§1.3 正常返与极限定理</option>
+            <option value="1.4">§1.4 吸收概率与破产</option>
+            <option value="1.5">§1.5 实用判据与排队论</option>
+          </select>
+        </div>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- Main View Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col">
+
+    <!-- VIEW 1: Topological Graph View -->
+    <div id="view-graph" class="view-section flex-1 flex flex-col relative glass-card rounded-3xl shadow-2xl overflow-hidden border border-slate-800">
+      <!-- Toolbar -->
+      <div class="px-5 py-3 border-b border-slate-800/80 flex items-center justify-between bg-slate-900/60">
+        <div class="flex items-center space-x-3 text-xs text-slate-400">
+          <span class="font-bold text-slate-200 flex items-center space-x-1">
+            <span>✨</span>
+            <span>拓扑因果星系</span>
+          </span>
+          <span class="hidden sm:inline text-slate-600">|</span>
+          <span class="hidden sm:inline">🖱️ 拖拽平移 · 滚轮缩放</span>
+          <span class="hidden sm:inline">·</span>
+          <span>🎯 点击任一节点，以橙色追踪前置依赖、以绿色高亮后继解锁</span>
+        </div>
+        <div class="flex items-center space-x-2">
+          <button id="btn-zoom-in" class="w-7 h-7 rounded-lg border border-slate-700 bg-slate-800/80 hover:bg-slate-700 text-slate-200 text-xs font-mono font-bold transition flex items-center justify-center" title="放大">+</button>
+          <button id="btn-zoom-out" class="w-7 h-7 rounded-lg border border-slate-700 bg-slate-800/80 hover:bg-slate-700 text-slate-200 text-xs font-mono font-bold transition flex items-center justify-center" title="缩小">-</button>
+          <button id="btn-zoom-reset" class="px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-800/80 hover:bg-slate-700 text-slate-300 text-xs transition" title="复位">复位画布</button>
+        </div>
+      </div>
+
+      <!-- Graph Canvas Container -->
+      <div id="graph-container" class="flex-1 relative w-full h-[650px] bg-[#070a12] cursor-grab active:cursor-grabbing overflow-hidden">
+        <canvas id="graph-canvas" class="w-full h-full block"></canvas>
+
+        <!-- Legend Overlay -->
+        <div class="absolute top-4 right-4 bg-slate-900/90 backdrop-blur-md border border-slate-800 rounded-2xl p-3.5 shadow-2xl text-xs pointer-events-none">
+          <div class="font-bold text-slate-200 mb-2 flex items-center space-x-1.5">
+            <span>🏷️</span>
+            <span>章节色彩图例</span>
+          </div>
+          <div class="space-y-1.5 text-slate-300">
+            <div class="flex items-center space-x-2"><span class="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-xs shadow-blue-500/50"></span><span>§1.1 基础概念与分类</span></div>
+            <div class="flex items-center space-x-2"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-xs shadow-emerald-500/50"></span><span>§1.2 常返与非常返状态</span></div>
+            <div class="flex items-center space-x-2"><span class="w-2.5 h-2.5 rounded-full bg-purple-500 shadow-xs shadow-purple-500/50"></span><span>§1.3 正常返与极限定理</span></div>
+            <div class="flex items-center space-x-2"><span class="w-2.5 h-2.5 rounded-full bg-amber-500 shadow-xs shadow-amber-500/50"></span><span>§1.4 吸收概率与赌徒破产</span></div>
+            <div class="flex items-center space-x-2"><span class="w-2.5 h-2.5 rounded-full bg-pink-500 shadow-xs shadow-pink-500/50"></span><span>§1.5 实用判据与排队论</span></div>
+          </div>
+          <div class="mt-3 pt-2.5 border-t border-slate-800 space-y-1">
+            <div class="flex items-center space-x-1.5 text-amber-400 font-medium"><span>🟠 橙色光束</span><span>= 前置输入依据</span></div>
+            <div class="flex items-center space-x-1.5 text-emerald-400 font-medium"><span>🟢 绿色光束</span><span>= 后继解锁引申</span></div>
+          </div>
+        </div>
+
+        <!-- Floating Quick Preview Drawer -->
+        <div id="graph-quick-preview" class="hidden absolute bottom-5 left-5 right-5 sm:left-auto sm:right-5 sm:w-[420px] bg-slate-900/95 backdrop-blur-xl border border-sky-500/40 rounded-2xl p-5 shadow-2xl z-30 transition-all">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW 2: Microscopic Proof Stepper View -->
+    <div id="view-stepper" class="view-section hidden flex-1 flex flex-col lg:flex-row gap-6">
+      <!-- Left Sidebar: Section Quick Navigator -->
+      <aside class="w-full lg:w-80 glass-card rounded-2xl p-4 shadow-xl h-fit max-h-[780px] overflow-y-auto border border-slate-800">
+        <div class="flex items-center justify-between mb-3 px-1">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">全章 71 个知识点目录</h3>
+          <span class="text-[11px] text-sky-400 font-mono">§1.1 - §1.5</span>
+        </div>
+        <div class="space-y-1" id="stepper-quick-nav">
+          <!-- Populated via script based on MARKOV_DATA -->
+        </div>
+      </aside>
+
+      <!-- Right Main Content: The Four-Layer Stepper -->
+      <section class="flex-1 overflow-y-auto max-h-[780px] pr-1" id="stepper-content">
+        <!-- Rendered dynamically by renderStepper() -->
+      </section>
+    </div>
+
+    <!-- VIEW 3: Dynamic Simulation Sandbox View -->
+    <div id="view-sim" class="view-section hidden flex-1 flex flex-col space-y-6">
+      <div class="bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-transparent border border-blue-500/30 rounded-2xl p-4 text-xs text-blue-200 flex items-center justify-between shadow-lg">
+        <div class="flex items-center space-x-2.5">
+          <span class="text-xl">🎲</span>
+          <div>
+            <strong>动态蒙特卡洛仿真实验室：</strong>
+            <span>将抽象的收敛极限、吸收壁、成功游程相变与排队论负漂移以实时动态轨迹直观显现！</span>
+          </div>
+        </div>
+        <span class="px-2.5 py-1 rounded-full bg-blue-500/20 text-blue-300 font-mono text-[11px] border border-blue-500/30">
+          Canvas 60FPS 实时渲染
+        </span>
+      </div>
+
+      <!-- 2x2 Grid of Sandboxes -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        <!-- Sandbox 1: Pólya Walk -->
+        <div class="glass-card rounded-3xl p-5 shadow-xl flex flex-col border border-slate-800">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <span class="px-2.5 py-0.5 text-xs font-bold rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                实验 1 · §1.2.3 (pp. 47-49)
+              </span>
+              <h3 class="text-base font-extrabold text-white mt-1.5 flex items-center space-x-2">
+                <span>Pólya 随机游走维度诅咒 (1D / 2D / 3D)</span>
+              </h3>
+            </div>
+            <div class="flex space-x-1.5">
+              <button id="btn-poly-start" class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition shadow-md glow-cyan">开始漫步</button>
+              <button id="btn-poly-stop" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-medium transition border border-slate-700">暂停</button>
+              <button id="btn-poly-reset" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-xl text-xs font-medium transition border border-slate-700">复位</button>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-3 mb-3 text-xs bg-slate-900/60 p-2.5 rounded-xl border border-slate-800">
+            <label class="flex items-center space-x-1.5 text-slate-300">
+              <span class="font-semibold text-slate-400">维度：</span>
+              <select id="select-poly-dim" class="border border-slate-700 rounded-lg px-2 py-1 bg-slate-800 text-slate-200 text-xs focus:ring-1 focus:ring-emerald-500">
+                <option value="1">一维 (1D 直线轨迹)</option>
+                <option value="2">二维 (2D 平面网格)</option>
+                <option value="3">三维 (3D 空间立体旋转)</option>
+              </select>
+            </label>
+            <label class="flex items-center space-x-1.5 text-slate-300">
+              <span class="font-semibold text-slate-400">1D 向右概率 $p$：</span>
+              <input type="range" id="input-poly-p" min="0.1" max="0.9" step="0.02" value="0.5" class="w-20 accent-emerald-500" />
+              <span id="val-poly-p" class="font-mono font-bold text-emerald-400">0.50</span>
+            </label>
+          </div>
+
+          <div class="relative w-full h-64 bg-[#070a12] border border-slate-800 rounded-2xl overflow-hidden mb-3.5 shadow-inner">
+            <canvas id="canvas-poly" width="550" height="256" class="w-full h-full block"></canvas>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2 bg-slate-900/80 p-3 rounded-2xl text-center text-xs border border-slate-800">
+            <div><span class="text-slate-500 block mb-0.5">步数 (Steps)</span><span id="poly-steps" class="font-mono font-bold text-white text-base">0</span></div>
+            <div><span class="text-slate-500 block mb-0.5">回访原点次数</span><span id="poly-returns" class="font-mono font-bold text-emerald-400 text-base">0</span></div>
+            <div><span class="text-slate-500 block mb-0.5">距原点距离</span><span id="poly-dist" class="font-mono font-bold text-cyan-400 text-base">0</span></div>
+          </div>
+          <p class="text-[11px] text-slate-400 mt-2.5 leading-relaxed">
+            ✨ <strong>数理内核：</strong> 1D/2D 漫步调和级数发散 $\sum p_{00}^{(2n)} = \infty$，必定 100% 重访原点；3D 游走由于空间立方稀释 $\sum \frac{1}{n^{3/2}} < \infty$，粒子最终以概率 1 永久漂向无穷深空！
+          </p>
+        </div>
+
+        <!-- Sandbox 2: Gambler's Ruin -->
+        <div class="glass-card rounded-3xl p-5 shadow-xl flex flex-col border border-slate-800">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <span class="px-2.5 py-0.5 text-xs font-bold rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                实验 2 · §1.4.2 (pp. 65-66)
+              </span>
+              <h3 class="text-base font-extrabold text-white mt-1.5">赌徒破产与双壁吸收模拟器</h3>
+            </div>
+            <div class="flex space-x-1.5">
+              <button id="btn-gambler-run" class="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-bold transition shadow-md glow-amber">并发 20 位赌徒</button>
+              <button id="btn-gambler-reset" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-xl text-xs font-medium transition border border-slate-700">清空统计</button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2 mb-3 text-xs bg-slate-900/60 p-2.5 rounded-xl border border-slate-800">
+            <label class="text-slate-300">
+              <span class="block text-slate-400 text-[11px]">初始本金 $x_0$: <strong id="val-gambler-x0" class="text-amber-400">10</strong></span>
+              <input type="range" id="input-gambler-x0" min="2" max="20" value="10" class="w-full mt-1 accent-amber-500" />
+            </label>
+            <label class="text-slate-300">
+              <span class="block text-slate-400 text-[11px]">胜出目标 $N$: <strong id="val-gambler-target" class="text-emerald-400">25</strong></span>
+              <input type="range" id="input-gambler-target" min="15" max="40" value="25" class="w-full mt-1 accent-emerald-500" />
+            </label>
+            <label class="text-slate-300">
+              <span class="block text-slate-400 text-[11px]">单场胜率 $p$: <strong id="val-gambler-p" class="text-sky-400">0.48</strong></span>
+              <input type="range" id="input-gambler-p" min="0.3" max="0.7" step="0.01" value="0.48" class="w-full mt-1 accent-sky-500" />
+            </label>
+          </div>
+
+          <div class="relative w-full h-64 bg-[#070a12] border border-slate-800 rounded-2xl overflow-hidden mb-3.5 shadow-inner">
+            <canvas id="canvas-gambler" width="550" height="256" class="w-full h-full block"></canvas>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2 bg-slate-900/80 p-3 rounded-2xl text-center text-xs border border-slate-800">
+            <div><span class="text-slate-500 block mb-0.5">测试总人数</span><span id="gambler-sims" class="font-mono font-bold text-white text-base">0</span></div>
+            <div><span class="text-slate-500 block mb-0.5">实验破产率</span><span id="gambler-emp-ruin" class="font-mono font-bold text-rose-400 text-base">0.000</span></div>
+            <div><span class="text-slate-500 block mb-0.5">理论破产率 (公式解)</span><span id="gambler-theo-ruin" class="font-mono font-bold text-sky-400 text-base">0.781</span></div>
+          </div>
+          <p class="text-[11px] text-slate-400 mt-2.5 leading-relaxed">
+            ✨ <strong>数理内核：</strong> 粒子撞击 0 或 $N$ 后被吸收。实测破产率在大数定律下精确贴合二阶差分方程理论解 $u_i = \frac{(q/p)^n - (q/p)^i}{(q/p)^n - 1}$！
+          </p>
+        </div>
+
+        <!-- Sandbox 3: Tom & Jerry -->
+        <div class="glass-card rounded-3xl p-5 shadow-xl flex flex-col border border-slate-800">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <span class="px-2.5 py-0.5 text-xs font-bold rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                实验 3 · §1.2.3 & §1.3.3 (pp. 50-51)
+              </span>
+              <h3 class="text-base font-extrabold text-white mt-1.5">猫和老鼠 · 成功游程相变跟踪台</h3>
+            </div>
+            <div class="flex space-x-1.5">
+              <button id="btn-tj-start" class="px-3.5 py-1.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold transition shadow-md">开始游程</button>
+              <button id="btn-tj-stop" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-medium transition border border-slate-700">暂停</button>
+            </div>
+          </div>
+
+          <div class="flex items-center space-x-3 mb-3 text-xs bg-slate-900/60 p-2.5 rounded-xl border border-slate-800">
+            <span class="font-semibold text-slate-400">相变模式规则：</span>
+            <select id="select-tj-mode" class="border border-slate-700 rounded-lg px-2.5 py-1 bg-slate-800 text-slate-200 text-xs focus:ring-1 focus:ring-purple-500 flex-1">
+              <option value="positive">正常返模式 (常数失手率 p_i = 0.35)</option>
+              <option value="null">零常返模式 (重尾分布 p_i = 1/(i+2))</option>
+              <option value="transient">非常返模式 (快速平方衰减 p_i = 1/(i+2)^2)</option>
+            </select>
+          </div>
+
+          <div class="relative w-full h-64 bg-[#070a12] border border-slate-800 rounded-2xl overflow-hidden mb-3.5 shadow-inner">
+            <canvas id="canvas-tj" width="550" height="256" class="w-full h-full block"></canvas>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2 bg-slate-900/80 p-3 rounded-2xl text-center text-xs border border-slate-800">
+            <div><span class="text-slate-500 block mb-0.5">当前连胜游程</span><span id="tj-run" class="font-mono font-bold text-amber-400 text-base">0</span></div>
+            <div><span class="text-slate-500 block mb-0.5">无穷乘积 ∏(1-p_i)</span><span id="tj-prod" class="font-mono font-bold text-purple-400 text-base">1.000</span></div>
+            <div><span class="text-slate-500 block mb-0.5">当前相变态</span><span id="tj-regime" class="font-bold text-xs leading-tight text-emerald-400">正常返</span></div>
+          </div>
+          <p class="text-[11px] text-slate-400 mt-2.5 leading-relaxed">
+            ✨ <strong>数理内核：</strong> 首次回访概率 $f_{00}^* = 1 - \lim \prod(1-p_i)$。当 $\sum p_i < \infty$ 时，无穷乘积脱离 0，质点有正概率连胜逃向无穷远（非常返态）！
+          </p>
+        </div>
+
+        <!-- Sandbox 4: Queuing System -->
+        <div class="glass-card rounded-3xl p-5 shadow-xl flex flex-col border border-slate-800">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <span class="px-2.5 py-0.5 text-xs font-bold rounded-full bg-pink-500/20 text-pink-300 border border-pink-500/30">
+                实验 4 · §1.5.2 (pp. 72-74)
+              </span>
+              <h3 class="text-base font-extrabold text-white mt-1.5">M/D/1 排队论与 Foster 漂移演示台</h3>
+            </div>
+            <div class="flex space-x-1.5">
+              <button id="btn-queue-start" class="px-3.5 py-1.5 bg-pink-600 hover:bg-pink-500 text-white rounded-xl text-xs font-bold transition shadow-md">开启动态服务</button>
+              <button id="btn-queue-stop" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-medium transition border border-slate-700">暂停</button>
+            </div>
+          </div>
+
+          <div class="flex items-center space-x-4 mb-3 text-xs bg-slate-900/60 p-2.5 rounded-xl border border-slate-800">
+            <span class="font-semibold text-slate-400">顾客平均到达率 $\lambda$：</span>
+            <input type="range" id="input-queue-lambda" min="0.4" max="1.5" step="0.05" value="0.8" class="w-36 accent-pink-500" />
+            <span id="val-queue-lambda" class="font-mono font-bold text-pink-400 text-sm">0.80</span>
+          </div>
+
+          <div class="relative w-full h-64 bg-[#070a12] border border-slate-800 rounded-2xl overflow-hidden mb-3.5 shadow-inner">
+            <canvas id="canvas-queue" width="550" height="256" class="w-full h-full block"></canvas>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2 bg-slate-900/80 p-3 rounded-2xl text-center text-xs border border-slate-800">
+            <div><span class="text-slate-500 block mb-0.5">当前排队人数</span><span id="queue-len" class="font-mono font-bold text-cyan-400 text-base">0</span></div>
+            <div><span class="text-slate-500 block mb-0.5">漂移项 (λ - 1)</span><span id="queue-drift" class="font-mono font-bold text-slate-300 text-xs">-0.20</span></div>
+            <div><span class="text-slate-500 block mb-0.5">稳态分类</span><span id="queue-status" class="font-bold text-xs leading-tight text-emerald-400">正常返 (安全)</span></div>
+          </div>
+          <p class="text-[11px] text-slate-400 mt-2.5 leading-relaxed">
+            ✨ <strong>数理内核：</strong> 当 $\lambda < 1$ 时满足 Foster 强负漂移判据 $\Delta V \le -1$，队列快速归零；当 $\lambda > 1$ 时单步漂移向外发散，排队人数线性暴涨！
+          </p>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- VIEW 4: Searchable Codex & Exercises View -->
+    <div id="view-codex" class="view-section hidden flex-1 flex flex-col">
+      <div class="flex items-center justify-between mb-5 bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
+        <div>
+          <h2 class="text-lg font-extrabold text-white tracking-tight">第一章全量讲义与习题秒查字典</h2>
+          <p class="text-xs text-slate-400">完整索引原书第1章 71 个条目（定义、定理、引理、命题、推论、例子和课后练习）</p>
+        </div>
+        <span id="codex-count" class="px-3.5 py-1 bg-blue-500/20 text-sky-300 border border-blue-500/30 rounded-full font-bold text-xs font-mono">加载中...</span>
+      </div>
+
+      <!-- Cards Grid -->
+      <div id="codex-items-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-12">
+        <!-- Populated via renderCodexList() -->
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-[#0b0f19] border-t border-slate-800/80 py-4 text-center text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+      <p>离散时间马尔科夫链 · 全景可视化讲义与显微镜证明工作台</p>
+      <p class="text-[11px] text-slate-500">南京大学数学系 戴雄平教授《应用随机过程》讲义 Chapter 1 · 面向数学初学者的高阶降维教学设计</p>
+    </div>
+  </footer>
+
+  <!-- Quick Nav Script -->
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      const quickNav = document.getElementById('stepper-quick-nav');
+      if (quickNav && window.MARKOV_DATA) {
+        quickNav.innerHTML = window.MARKOV_DATA.map(item => `
+          <button onclick="window.APP.renderStepper('${item.id}')" data-id="${item.id}"
+            class="stepper-nav-item w-full text-left px-3 py-2 rounded-xl text-xs transition flex items-center justify-between border border-transparent hover:border-slate-700 hover:bg-slate-800/70 group">
+            <span class="truncate font-medium group-hover:text-sky-300">${item.title.split(':')[0]}</span>
+            <span class="text-[10px] text-slate-500 font-mono ml-2">§${item.section}</span>
+          </button>
+        `).join('');
+      }
+    });
+  </script>
+</body>
+</html>

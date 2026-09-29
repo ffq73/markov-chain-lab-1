@@ -1,12 +1,14 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" class="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>离散时间马尔科夫链 · 全景可视化讲义与显微镜证明工作台</title>
+  
   <!-- Tailwind CSS via allowlisted CDN -->
   <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
-  <!-- MathJax for rendering LaTeX formulas -->
+  
+  <!-- MathJax Configuration for KaTeX-Grade Math Typesetting -->
   <script>
     window.MathJax = {
       tex: {
@@ -20,62 +22,109 @@
     };
   </script>
   <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
   <style>
-    /* Custom scrollbars and styling */
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: #F3F4F6; }
-    ::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 3px; }
-    ::-webkit-scrollbar-thumb:hover { background: #9CA3AF; }
-    .mjx-chtml { font-size: 105% !important; }
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 7px; height: 7px; }
+    ::-webkit-scrollbar-track { background: #0b0f19; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+    /* Cosmic Ambient Glows */
+    .glow-cyan {
+      box-shadow: 0 0 25px -5px rgba(6, 182, 212, 0.4);
+    }
+    .glow-blue {
+      box-shadow: 0 0 30px -5px rgba(59, 130, 246, 0.35);
+    }
+    .glow-amber {
+      box-shadow: 0 0 25px -5px rgba(245, 158, 11, 0.3);
+    }
+    
+    /* Math Formula Typography */
+    .mjx-chtml {
+      font-size: 104% !important;
+      color: #E2E8F0 !important;
+    }
+
+    /* Glassmorphism styling */
+    .glass-card {
+      background: rgba(15, 23, 42, 0.72);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .glass-card-hover:hover {
+      background: rgba(22, 33, 56, 0.85);
+      border-color: rgba(59, 130, 246, 0.35);
+    }
   </style>
 </head>
-<body class="bg-gray-100 text-gray-900 font-sans antialiased min-h-screen flex flex-col">
+<body class="bg-[#090d16] text-slate-100 font-sans antialiased min-h-screen flex flex-col selection:bg-blue-600 selection:text-white">
 
-  <!-- Top Navbar -->
-  <header class="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-xs">
+  <!-- Ambient Light Orbs -->
+  <div class="fixed top-0 left-1/4 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none -z-10"></div>
+  <div class="fixed bottom-0 right-1/4 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl pointer-events-none -z-10"></div>
+
+  <!-- Top Glass Navigation Bar -->
+  <header class="bg-[#0f172a]/80 backdrop-blur-xl border-b border-slate-800/80 sticky top-0 z-40 shadow-xl">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex items-center justify-between h-16">
-        <!-- Logo & Title -->
-        <div class="flex items-center space-x-3">
-          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold text-xl shadow-md">
-            M
+        
+        <!-- Brand & Title -->
+        <div class="flex items-center space-x-3.5">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 via-blue-600 to-indigo-600 flex items-center justify-center text-white font-extrabold text-xl shadow-lg glow-blue">
+            <span class="tracking-tighter">MC</span>
           </div>
           <div>
-            <h1 class="text-base font-bold text-gray-900 leading-tight">
-              马尔科夫链 · 全景可视化工作台
+            <h1 class="text-sm sm:text-base font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-sky-300 via-blue-200 to-indigo-300">
+              马尔科夫链 · 全景可视化讲义与显微镜工作台
             </h1>
-            <p class="text-xs text-gray-500">基于戴雄平《应用随机过程》第1章 (pp. 35 - 76)</p>
+            <div class="flex items-center space-x-2 text-[11px] text-slate-400">
+              <span>戴雄平《应用随机过程》第1章</span>
+              <span>·</span>
+              <span class="text-emerald-400 font-medium">数学初学者友好 & 零跳步推导</span>
+            </div>
           </div>
         </div>
 
+        <!-- Global Progress Tracker -->
+        <div class="hidden xl:flex items-center space-x-3 bg-slate-900/80 border border-slate-800 rounded-xl px-3.5 py-1.5">
+          <div class="text-[11px] text-slate-400">学习进度：</div>
+          <div class="w-28 h-2 bg-slate-800 rounded-full overflow-hidden">
+            <div id="global-progress-bar" class="h-full bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full transition-all duration-300" style="width: 0%;"></div>
+          </div>
+          <span id="global-progress-text" class="text-xs font-mono font-bold text-sky-400">0 / 71</span>
+        </div>
+
         <!-- Navigation Tabs -->
-        <nav class="flex space-x-1 sm:space-x-2 bg-gray-100 p-1 rounded-xl">
-          <button data-view="graph" class="nav-tab-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-600 text-white transition flex items-center space-x-1.5 shadow-xs">
+        <nav class="flex space-x-1 bg-slate-900/90 border border-slate-800 p-1 rounded-xl shadow-inner">
+          <button data-view="graph" class="nav-tab-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-600/90 text-white transition flex items-center space-x-1.5 shadow-sm">
             <span>🌐</span>
             <span>拓扑星系</span>
           </button>
-          <button data-view="stepper" class="nav-tab-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-600 hover:bg-gray-200 transition flex items-center space-x-1.5">
+          <button data-view="stepper" class="nav-tab-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:bg-slate-800/60 transition flex items-center space-x-1.5">
             <span>🔬</span>
             <span>显微镜证明</span>
           </button>
-          <button data-view="sim" class="nav-tab-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-600 hover:bg-gray-200 transition flex items-center space-x-1.5">
+          <button data-view="sim" class="nav-tab-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:bg-slate-800/60 transition flex items-center space-x-1.5">
             <span>🎲</span>
             <span>动态仿真沙盒</span>
           </button>
-          <button data-view="codex" class="nav-tab-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-600 hover:bg-gray-200 transition flex items-center space-x-1.5">
+          <button data-view="codex" class="nav-tab-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:bg-slate-800/60 transition flex items-center space-x-1.5">
             <span>📚</span>
-            <span>全量索引字典</span>
+            <span>全量字典</span>
           </button>
         </nav>
 
-        <!-- Search Box & Section Selector -->
-        <div class="flex items-center space-x-2">
+        <!-- Search Box & Filter -->
+        <div class="hidden md:flex items-center space-x-2">
           <div class="relative">
-            <input type="text" id="global-search" placeholder="快速检索定理、习题、概念..." 
-              class="w-48 sm:w-64 pl-8 pr-3 py-1.5 text-xs bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition" />
-            <span class="absolute left-2.5 top-2 text-gray-400 text-xs">🔍</span>
+            <input type="text" id="global-search" placeholder="检索定理、引理、习题、概念..." 
+              class="w-44 lg:w-56 pl-8 pr-3 py-1.5 text-xs bg-slate-900 border border-slate-700/80 rounded-lg text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition" />
+            <span class="absolute left-2.5 top-2 text-slate-500 text-xs">🔍</span>
           </div>
-          <select id="filter-section" class="text-xs border border-gray-300 rounded-lg px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <select id="filter-section" class="text-xs border border-slate-700/80 rounded-lg px-2.5 py-1.5 bg-slate-900 text-slate-300 focus:outline-none focus:ring-2 focus:ring-sky-500">
             <option value="all">全章节 (§1.1-§1.5)</option>
             <option value="1.1">§1.1 基础概念与分类</option>
             <option value="1.2">§1.2 常返与非常返</option>
@@ -83,16 +132,8 @@
             <option value="1.4">§1.4 吸收概率与破产</option>
             <option value="1.5">§1.5 实用判据与排队论</option>
           </select>
-          <select id="filter-type" class="text-xs border border-gray-300 rounded-lg px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <option value="all">所有类型</option>
-            <option value="definition">📖 定义</option>
-            <option value="theorem">🏆 定理</option>
-            <option value="lemma">🔑 引理</option>
-            <option value="proposition">⚡ 命题</option>
-            <option value="example">🌟 例子</option>
-            <option value="exercise">✏️ 习题精解</option>
-          </select>
         </div>
+
       </div>
     </div>
   </header>
@@ -101,46 +142,51 @@
   <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col">
 
     <!-- VIEW 1: Topological Graph View -->
-    <div id="view-graph" class="view-section flex-1 flex flex-col relative bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+    <div id="view-graph" class="view-section flex-1 flex flex-col relative glass-card rounded-3xl shadow-2xl overflow-hidden border border-slate-800">
       <!-- Toolbar -->
-      <div class="px-5 py-3 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
-        <div class="flex items-center space-x-3 text-xs text-gray-600">
-          <span class="font-bold text-gray-800">拓扑操作提示：</span>
-          <span>🖱️ 拖拽画布可平移</span>
-          <span>·</span>
-          <span>⚙️ 滚轮缩放</span>
-          <span>·</span>
-          <span>🎯 点击节点追踪因果依赖链路</span>
+      <div class="px-5 py-3 border-b border-slate-800/80 flex items-center justify-between bg-slate-900/60">
+        <div class="flex items-center space-x-3 text-xs text-slate-400">
+          <span class="font-bold text-slate-200 flex items-center space-x-1">
+            <span>✨</span>
+            <span>拓扑因果星系</span>
+          </span>
+          <span class="hidden sm:inline text-slate-600">|</span>
+          <span class="hidden sm:inline">🖱️ 拖拽平移 · 滚轮缩放</span>
+          <span class="hidden sm:inline">·</span>
+          <span>🎯 点击任一节点，以橙色追踪前置依赖、以绿色高亮后继解锁</span>
         </div>
-        <div class="flex items-center space-x-1.5">
-          <button id="btn-zoom-in" class="p-1.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-100 text-gray-700 text-xs shadow-2xs font-mono font-bold" title="放大">+</button>
-          <button id="btn-zoom-out" class="p-1.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-100 text-gray-700 text-xs shadow-2xs font-mono font-bold" title="缩小">-</button>
-          <button id="btn-zoom-reset" class="px-2.5 py-1.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-100 text-gray-700 text-xs shadow-2xs" title="复位">复位画布</button>
+        <div class="flex items-center space-x-2">
+          <button id="btn-zoom-in" class="w-7 h-7 rounded-lg border border-slate-700 bg-slate-800/80 hover:bg-slate-700 text-slate-200 text-xs font-mono font-bold transition flex items-center justify-center" title="放大">+</button>
+          <button id="btn-zoom-out" class="w-7 h-7 rounded-lg border border-slate-700 bg-slate-800/80 hover:bg-slate-700 text-slate-200 text-xs font-mono font-bold transition flex items-center justify-center" title="缩小">-</button>
+          <button id="btn-zoom-reset" class="px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-800/80 hover:bg-slate-700 text-slate-300 text-xs transition" title="复位">复位画布</button>
         </div>
       </div>
 
       <!-- Graph Canvas Container -->
-      <div id="graph-container" class="flex-1 relative w-full h-[640px] bg-slate-50 cursor-grab active:cursor-grabbing overflow-hidden">
+      <div id="graph-container" class="flex-1 relative w-full h-[650px] bg-[#070a12] cursor-grab active:cursor-grabbing overflow-hidden">
         <canvas id="graph-canvas" class="w-full h-full block"></canvas>
 
         <!-- Legend Overlay -->
-        <div class="absolute top-4 right-4 bg-white/95 backdrop-blur border border-gray-200 rounded-xl p-3 shadow-md text-xs pointer-events-none">
-          <div class="font-bold text-gray-800 mb-2">节点类型图例</div>
-          <div class="space-y-1.5">
-            <div class="flex items-center space-x-2"><span class="w-3 h-3 rounded-full bg-blue-500"></span><span>§1.1 基础概念与分类</span></div>
-            <div class="flex items-center space-x-2"><span class="w-3 h-3 rounded-full bg-emerald-500"></span><span>§1.2 常返与非常返</span></div>
-            <div class="flex items-center space-x-2"><span class="w-3 h-3 rounded-full bg-purple-500"></span><span>§1.3 正常返与极限定理</span></div>
-            <div class="flex items-center space-x-2"><span class="w-3 h-3 rounded-full bg-amber-500"></span><span>§1.4 吸收概率与破产</span></div>
-            <div class="flex items-center space-x-2"><span class="w-3 h-3 rounded-full bg-pink-500"></span><span>§1.5 实用判据与排队论</span></div>
+        <div class="absolute top-4 right-4 bg-slate-900/90 backdrop-blur-md border border-slate-800 rounded-2xl p-3.5 shadow-2xl text-xs pointer-events-none">
+          <div class="font-bold text-slate-200 mb-2 flex items-center space-x-1.5">
+            <span>🏷️</span>
+            <span>章节色彩图例</span>
           </div>
-          <div class="mt-2.5 pt-2 border-t border-gray-100 space-y-1">
-            <div class="flex items-center space-x-1.5 text-amber-600 font-medium"><span>🟠 橙色高亮</span><span>= 前置输入依赖</span></div>
-            <div class="flex items-center space-x-1.5 text-emerald-600 font-medium"><span>🟢 绿色高亮</span><span>= 后继解锁引申</span></div>
+          <div class="space-y-1.5 text-slate-300">
+            <div class="flex items-center space-x-2"><span class="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-xs shadow-blue-500/50"></span><span>§1.1 基础概念与分类</span></div>
+            <div class="flex items-center space-x-2"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-xs shadow-emerald-500/50"></span><span>§1.2 常返与非常返状态</span></div>
+            <div class="flex items-center space-x-2"><span class="w-2.5 h-2.5 rounded-full bg-purple-500 shadow-xs shadow-purple-500/50"></span><span>§1.3 正常返与极限定理</span></div>
+            <div class="flex items-center space-x-2"><span class="w-2.5 h-2.5 rounded-full bg-amber-500 shadow-xs shadow-amber-500/50"></span><span>§1.4 吸收概率与赌徒破产</span></div>
+            <div class="flex items-center space-x-2"><span class="w-2.5 h-2.5 rounded-full bg-pink-500 shadow-xs shadow-pink-500/50"></span><span>§1.5 实用判据与排队论</span></div>
+          </div>
+          <div class="mt-3 pt-2.5 border-t border-slate-800 space-y-1">
+            <div class="flex items-center space-x-1.5 text-amber-400 font-medium"><span>🟠 橙色光束</span><span>= 前置输入依据</span></div>
+            <div class="flex items-center space-x-1.5 text-emerald-400 font-medium"><span>🟢 绿色光束</span><span>= 后继解锁引申</span></div>
           </div>
         </div>
 
         <!-- Floating Quick Preview Drawer -->
-        <div id="graph-quick-preview" class="hidden absolute bottom-5 left-5 right-5 sm:left-auto sm:right-5 sm:w-96 bg-white/95 backdrop-blur border border-blue-200 rounded-2xl p-5 shadow-2xl z-30 transition-all">
+        <div id="graph-quick-preview" class="hidden absolute bottom-5 left-5 right-5 sm:left-auto sm:right-5 sm:w-[420px] bg-slate-900/95 backdrop-blur-xl border border-sky-500/40 rounded-2xl p-5 shadow-2xl z-30 transition-all">
           <!-- Populated by JS -->
         </div>
       </div>
@@ -149,173 +195,203 @@
     <!-- VIEW 2: Microscopic Proof Stepper View -->
     <div id="view-stepper" class="view-section hidden flex-1 flex flex-col lg:flex-row gap-6">
       <!-- Left Sidebar: Section Quick Navigator -->
-      <aside class="w-full lg:w-72 bg-white border border-gray-200 rounded-2xl p-4 shadow-sm h-fit max-h-[750px] overflow-y-auto">
-        <h3 class="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3 px-1">全章定理与习题目录</h3>
+      <aside class="w-full lg:w-80 glass-card rounded-2xl p-4 shadow-xl h-fit max-h-[780px] overflow-y-auto border border-slate-800">
+        <div class="flex items-center justify-between mb-3 px-1">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">全章 71 个知识点目录</h3>
+          <span class="text-[11px] text-sky-400 font-mono">§1.1 - §1.5</span>
+        </div>
         <div class="space-y-1" id="stepper-quick-nav">
           <!-- Populated via script based on MARKOV_DATA -->
         </div>
       </aside>
 
       <!-- Right Main Content: The Four-Layer Stepper -->
-      <section class="flex-1 overflow-y-auto max-h-[750px] pr-1" id="stepper-content">
+      <section class="flex-1 overflow-y-auto max-h-[780px] pr-1" id="stepper-content">
         <!-- Rendered dynamically by renderStepper() -->
       </section>
     </div>
 
     <!-- VIEW 3: Dynamic Simulation Sandbox View -->
     <div id="view-sim" class="view-section hidden flex-1 flex flex-col space-y-6">
-      <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 text-xs text-blue-800">
-        💡 <strong>动态仿真说明：</strong> 本实验室采用实时蒙特卡洛引擎，将讲义第一章中最为核心的四大数学模型进行真实时空采样。拖动滑块即可直观目睹相变与渐近极限的物理显现！
+      <div class="bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-transparent border border-blue-500/30 rounded-2xl p-4 text-xs text-blue-200 flex items-center justify-between shadow-lg">
+        <div class="flex items-center space-x-2.5">
+          <span class="text-xl">🎲</span>
+          <div>
+            <strong>动态蒙特卡洛仿真实验室：</strong>
+            <span>将抽象的收敛极限、吸收壁、成功游程相变与排队论负漂移以实时动态轨迹直观显现！</span>
+          </div>
+        </div>
+        <span class="px-2.5 py-1 rounded-full bg-blue-500/20 text-blue-300 font-mono text-[11px] border border-blue-500/30">
+          Canvas 60FPS 实时渲染
+        </span>
       </div>
 
       <!-- 2x2 Grid of Sandboxes -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
         <!-- Sandbox 1: Pólya Walk -->
-        <div class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm flex flex-col">
+        <div class="glass-card rounded-3xl p-5 shadow-xl flex flex-col border border-slate-800">
           <div class="flex items-center justify-between mb-3">
             <div>
-              <span class="px-2 py-0.5 text-xs font-bold rounded bg-emerald-100 text-emerald-800">实验 1 · §1.2.3</span>
-              <h3 class="text-base font-bold text-gray-900 mt-1">Pólya 随机游走维度诅咒 (1D/2D/3D)</h3>
+              <span class="px-2.5 py-0.5 text-xs font-bold rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                实验 1 · §1.2.3 (pp. 47-49)
+              </span>
+              <h3 class="text-base font-extrabold text-white mt-1.5 flex items-center space-x-2">
+                <span>Pólya 随机游走维度诅咒 (1D / 2D / 3D)</span>
+              </h3>
             </div>
             <div class="flex space-x-1.5">
-              <button id="btn-poly-start" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-medium transition shadow-2xs">开始漫步</button>
-              <button id="btn-poly-stop" class="px-3 py-1 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-xs font-medium transition">暂停</button>
-              <button id="btn-poly-reset" class="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg text-xs font-medium transition">复位</button>
+              <button id="btn-poly-start" class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition shadow-md glow-cyan">开始漫步</button>
+              <button id="btn-poly-stop" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-medium transition border border-slate-700">暂停</button>
+              <button id="btn-poly-reset" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-xl text-xs font-medium transition border border-slate-700">复位</button>
             </div>
           </div>
 
-          <div class="flex items-center space-x-4 mb-3 text-xs">
-            <label class="flex items-center space-x-1 text-gray-700">
-              <span class="font-semibold">维度：</span>
-              <select id="select-poly-dim" class="border border-gray-300 rounded px-2 py-1 bg-white text-xs">
-                <option value="1">一维 (1D 直线)</option>
+          <div class="flex flex-wrap items-center gap-3 mb-3 text-xs bg-slate-900/60 p-2.5 rounded-xl border border-slate-800">
+            <label class="flex items-center space-x-1.5 text-slate-300">
+              <span class="font-semibold text-slate-400">维度：</span>
+              <select id="select-poly-dim" class="border border-slate-700 rounded-lg px-2 py-1 bg-slate-800 text-slate-200 text-xs focus:ring-1 focus:ring-emerald-500">
+                <option value="1">一维 (1D 直线轨迹)</option>
                 <option value="2">二维 (2D 平面网格)</option>
-                <option value="3">三维 (3D 空间立体)</option>
+                <option value="3">三维 (3D 空间立体旋转)</option>
               </select>
             </label>
-            <label class="flex items-center space-x-1 text-gray-700">
-              <span class="font-semibold">1D 向右概率 $p$：</span>
-              <input type="range" id="input-poly-p" min="0.1" max="0.9" step="0.02" value="0.5" class="w-20" />
-              <span id="val-poly-p" class="font-mono font-bold text-blue-600">0.50</span>
+            <label class="flex items-center space-x-1.5 text-slate-300">
+              <span class="font-semibold text-slate-400">1D 向右概率 $p$：</span>
+              <input type="range" id="input-poly-p" min="0.1" max="0.9" step="0.02" value="0.5" class="w-20 accent-emerald-500" />
+              <span id="val-poly-p" class="font-mono font-bold text-emerald-400">0.50</span>
             </label>
           </div>
 
-          <div class="relative w-full h-64 bg-gray-50 border border-gray-100 rounded-xl overflow-hidden mb-3">
+          <div class="relative w-full h-64 bg-[#070a12] border border-slate-800 rounded-2xl overflow-hidden mb-3.5 shadow-inner">
             <canvas id="canvas-poly" width="550" height="256" class="w-full h-full block"></canvas>
           </div>
 
-          <div class="grid grid-cols-3 gap-2 bg-gray-50 p-2.5 rounded-xl text-center text-xs">
-            <div><span class="text-gray-400 block">步数 (Steps)</span><span id="poly-steps" class="font-bold text-gray-800 text-sm">0</span></div>
-            <div><span class="text-gray-400 block">回访原点次数</span><span id="poly-returns" class="font-bold text-emerald-600 text-sm">0</span></div>
-            <div><span class="text-gray-400 block">距原点距离</span><span id="poly-dist" class="font-bold text-blue-600 text-sm">0</span></div>
+          <div class="grid grid-cols-3 gap-2 bg-slate-900/80 p-3 rounded-2xl text-center text-xs border border-slate-800">
+            <div><span class="text-slate-500 block mb-0.5">步数 (Steps)</span><span id="poly-steps" class="font-mono font-bold text-white text-base">0</span></div>
+            <div><span class="text-slate-500 block mb-0.5">回访原点次数</span><span id="poly-returns" class="font-mono font-bold text-emerald-400 text-base">0</span></div>
+            <div><span class="text-slate-500 block mb-0.5">距原点距离</span><span id="poly-dist" class="font-mono font-bold text-cyan-400 text-base">0</span></div>
           </div>
-          <p class="text-[11px] text-gray-500 mt-2">✨ <strong>理论定律：</strong> 1D/2D对称游走级数发散必常返；3D游走由于空间体积 $r^3$ 稀释，$\\sum p_{00}^{(2n)} < \\infty$，必定永久逃逸！</p>
+          <p class="text-[11px] text-slate-400 mt-2.5 leading-relaxed">
+            ✨ <strong>数理内核：</strong> 1D/2D 漫步调和级数发散 $\sum p_{00}^{(2n)} = \infty$，必定 100% 重访原点；3D 游走由于空间立方稀释 $\sum \frac{1}{n^{3/2}} < \infty$，粒子最终以概率 1 永久漂向无穷深空！
+          </p>
         </div>
 
         <!-- Sandbox 2: Gambler's Ruin -->
-        <div class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm flex flex-col">
+        <div class="glass-card rounded-3xl p-5 shadow-xl flex flex-col border border-slate-800">
           <div class="flex items-center justify-between mb-3">
             <div>
-              <span class="px-2 py-0.5 text-xs font-bold rounded bg-amber-100 text-amber-800">实验 2 · §1.4.2</span>
-              <h3 class="text-base font-bold text-gray-900 mt-1">赌徒破产与双壁吸收模拟器</h3>
+              <span class="px-2.5 py-0.5 text-xs font-bold rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                实验 2 · §1.4.2 (pp. 65-66)
+              </span>
+              <h3 class="text-base font-extrabold text-white mt-1.5">赌徒破产与双壁吸收模拟器</h3>
             </div>
             <div class="flex space-x-1.5">
-              <button id="btn-gambler-run" class="px-3 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-medium transition shadow-2xs">发射 20 位赌徒</button>
-              <button id="btn-gambler-reset" class="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg text-xs font-medium transition">清空统计</button>
+              <button id="btn-gambler-run" class="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-bold transition shadow-md glow-amber">并发 20 位赌徒</button>
+              <button id="btn-gambler-reset" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-xl text-xs font-medium transition border border-slate-700">清空统计</button>
             </div>
           </div>
 
-          <div class="grid grid-cols-3 gap-2 mb-3 text-xs">
-            <label class="text-gray-700">
-              <span class="block text-gray-500">初始本金 $x_0$: <strong id="val-gambler-x0" class="text-blue-600">10</strong></span>
-              <input type="range" id="input-gambler-x0" min="2" max="20" value="10" class="w-full mt-1" />
+          <div class="grid grid-cols-3 gap-2 mb-3 text-xs bg-slate-900/60 p-2.5 rounded-xl border border-slate-800">
+            <label class="text-slate-300">
+              <span class="block text-slate-400 text-[11px]">初始本金 $x_0$: <strong id="val-gambler-x0" class="text-amber-400">10</strong></span>
+              <input type="range" id="input-gambler-x0" min="2" max="20" value="10" class="w-full mt-1 accent-amber-500" />
             </label>
-            <label class="text-gray-700">
-              <span class="block text-gray-500">胜出离场目标: <strong id="val-gambler-target" class="text-blue-600">25</strong></span>
-              <input type="range" id="input-gambler-target" min="15" max="40" value="25" class="w-full mt-1" />
+            <label class="text-slate-300">
+              <span class="block text-slate-400 text-[11px]">胜出目标 $N$: <strong id="val-gambler-target" class="text-emerald-400">25</strong></span>
+              <input type="range" id="input-gambler-target" min="15" max="40" value="25" class="w-full mt-1 accent-emerald-500" />
             </label>
-            <label class="text-gray-700">
-              <span class="block text-gray-500">单场赢率 $p$: <strong id="val-gambler-p" class="text-blue-600">0.48</strong></span>
-              <input type="range" id="input-gambler-p" min="0.3" max="0.7" step="0.01" value="0.48" class="w-full mt-1" />
+            <label class="text-slate-300">
+              <span class="block text-slate-400 text-[11px]">单场胜率 $p$: <strong id="val-gambler-p" class="text-sky-400">0.48</strong></span>
+              <input type="range" id="input-gambler-p" min="0.3" max="0.7" step="0.01" value="0.48" class="w-full mt-1 accent-sky-500" />
             </label>
           </div>
 
-          <div class="relative w-full h-64 bg-gray-50 border border-gray-100 rounded-xl overflow-hidden mb-3">
+          <div class="relative w-full h-64 bg-[#070a12] border border-slate-800 rounded-2xl overflow-hidden mb-3.5 shadow-inner">
             <canvas id="canvas-gambler" width="550" height="256" class="w-full h-full block"></canvas>
           </div>
 
-          <div class="grid grid-cols-3 gap-2 bg-gray-50 p-2.5 rounded-xl text-center text-xs">
-            <div><span class="text-gray-400 block">实验总人数</span><span id="gambler-sims" class="font-bold text-gray-800 text-sm">0</span></div>
-            <div><span class="text-gray-400 block">实验破产率</span><span id="gambler-emp-ruin" class="font-bold text-rose-600 text-sm">0.000</span></div>
-            <div><span class="text-gray-400 block">理论破产率 (公式解)</span><span id="gambler-theo-ruin" class="font-bold text-blue-600 text-sm">0.781</span></div>
+          <div class="grid grid-cols-3 gap-2 bg-slate-900/80 p-3 rounded-2xl text-center text-xs border border-slate-800">
+            <div><span class="text-slate-500 block mb-0.5">测试总人数</span><span id="gambler-sims" class="font-mono font-bold text-white text-base">0</span></div>
+            <div><span class="text-slate-500 block mb-0.5">实验破产率</span><span id="gambler-emp-ruin" class="font-mono font-bold text-rose-400 text-base">0.000</span></div>
+            <div><span class="text-slate-500 block mb-0.5">理论破产率 (公式解)</span><span id="gambler-theo-ruin" class="font-mono font-bold text-sky-400 text-base">0.781</span></div>
           </div>
-          <p class="text-[11px] text-gray-500 mt-2">✨ <strong>理论定律：</strong> 实验破产率在大数定律下精确逼近差分方程理论解 $u_i = \\frac{(q/p)^n - (q/p)^i}{(q/p)^n - 1}$！</p>
+          <p class="text-[11px] text-slate-400 mt-2.5 leading-relaxed">
+            ✨ <strong>数理内核：</strong> 粒子撞击 0 或 $N$ 后被吸收。实测破产率在大数定律下精确贴合二阶差分方程理论解 $u_i = \frac{(q/p)^n - (q/p)^i}{(q/p)^n - 1}$！
+          </p>
         </div>
 
         <!-- Sandbox 3: Tom & Jerry -->
-        <div class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm flex flex-col">
+        <div class="glass-card rounded-3xl p-5 shadow-xl flex flex-col border border-slate-800">
           <div class="flex items-center justify-between mb-3">
             <div>
-              <span class="px-2 py-0.5 text-xs font-bold rounded bg-purple-100 text-purple-800">实验 3 · §1.2.3 & §1.3.3</span>
-              <h3 class="text-base font-bold text-gray-900 mt-1">猫和老鼠·成功游程相变跟踪台</h3>
+              <span class="px-2.5 py-0.5 text-xs font-bold rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                实验 3 · §1.2.3 & §1.3.3 (pp. 50-51)
+              </span>
+              <h3 class="text-base font-extrabold text-white mt-1.5">猫和老鼠 · 成功游程相变跟踪台</h3>
             </div>
             <div class="flex space-x-1.5">
-              <button id="btn-tj-start" class="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-medium transition shadow-2xs">开始游程</button>
-              <button id="btn-tj-stop" class="px-3 py-1 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-xs font-medium transition">暂停</button>
+              <button id="btn-tj-start" class="px-3.5 py-1.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold transition shadow-md">开始游程</button>
+              <button id="btn-tj-stop" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-medium transition border border-slate-700">暂停</button>
             </div>
           </div>
 
-          <div class="flex items-center space-x-3 mb-3 text-xs">
-            <span class="font-semibold text-gray-700">概率规则 (相变模式)：</span>
-            <select id="select-tj-mode" class="border border-gray-300 rounded px-2 py-1 bg-white text-xs">
+          <div class="flex items-center space-x-3 mb-3 text-xs bg-slate-900/60 p-2.5 rounded-xl border border-slate-800">
+            <span class="font-semibold text-slate-400">相变模式规则：</span>
+            <select id="select-tj-mode" class="border border-slate-700 rounded-lg px-2.5 py-1 bg-slate-800 text-slate-200 text-xs focus:ring-1 focus:ring-purple-500 flex-1">
               <option value="positive">正常返模式 (常数失手率 p_i = 0.35)</option>
-              <option value="null">零常返模式 (重尾衰减 p_i = 1/(i+2))</option>
-              <option value="transient">非常返模式 (快速收敛 p_i = 1/(i+2)^2)</option>
+              <option value="null">零常返模式 (重尾分布 p_i = 1/(i+2))</option>
+              <option value="transient">非常返模式 (快速平方衰减 p_i = 1/(i+2)^2)</option>
             </select>
           </div>
 
-          <div class="relative w-full h-64 bg-gray-50 border border-gray-100 rounded-xl overflow-hidden mb-3">
+          <div class="relative w-full h-64 bg-[#070a12] border border-slate-800 rounded-2xl overflow-hidden mb-3.5 shadow-inner">
             <canvas id="canvas-tj" width="550" height="256" class="w-full h-full block"></canvas>
           </div>
 
-          <div class="grid grid-cols-3 gap-2 bg-gray-50 p-2.5 rounded-xl text-center text-xs">
-            <div><span class="text-gray-400 block">当前连胜游程</span><span id="tj-run" class="font-bold text-amber-600 text-sm">0</span></div>
-            <div><span class="text-gray-400 block">无穷乘积 ∏(1-p_i)</span><span id="tj-prod" class="font-bold text-purple-600 text-sm">1.000</span></div>
-            <div class="col-span-1"><span class="text-gray-400 block">当前相变态</span><span id="tj-regime" class="font-bold text-xs leading-tight">正常返</span></div>
+          <div class="grid grid-cols-3 gap-2 bg-slate-900/80 p-3 rounded-2xl text-center text-xs border border-slate-800">
+            <div><span class="text-slate-500 block mb-0.5">当前连胜游程</span><span id="tj-run" class="font-mono font-bold text-amber-400 text-base">0</span></div>
+            <div><span class="text-slate-500 block mb-0.5">无穷乘积 ∏(1-p_i)</span><span id="tj-prod" class="font-mono font-bold text-purple-400 text-base">1.000</span></div>
+            <div><span class="text-slate-500 block mb-0.5">当前相变态</span><span id="tj-regime" class="font-bold text-xs leading-tight text-emerald-400">正常返</span></div>
           </div>
-          <p class="text-[11px] text-gray-500 mt-2">✨ <strong>理论定律：</strong> 当 $\\sum p_i < \\infty$ 时，无穷乘积脱离 0，质点一去不回，连胜纪录向无穷大暴涨！</p>
+          <p class="text-[11px] text-slate-400 mt-2.5 leading-relaxed">
+            ✨ <strong>数理内核：</strong> 首次回访概率 $f_{00}^* = 1 - \lim \prod(1-p_i)$。当 $\sum p_i < \infty$ 时，无穷乘积脱离 0，质点有正概率连胜逃向无穷远（非常返态）！
+          </p>
         </div>
 
         <!-- Sandbox 4: Queuing System -->
-        <div class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm flex flex-col">
+        <div class="glass-card rounded-3xl p-5 shadow-xl flex flex-col border border-slate-800">
           <div class="flex items-center justify-between mb-3">
             <div>
-              <span class="px-2 py-0.5 text-xs font-bold rounded bg-pink-100 text-pink-800">实验 4 · §1.5.2</span>
-              <h3 class="text-base font-bold text-gray-900 mt-1">M/D/1 排队论与 Foster 漂移演示台</h3>
+              <span class="px-2.5 py-0.5 text-xs font-bold rounded-full bg-pink-500/20 text-pink-300 border border-pink-500/30">
+                实验 4 · §1.5.2 (pp. 72-74)
+              </span>
+              <h3 class="text-base font-extrabold text-white mt-1.5">M/D/1 排队论与 Foster 漂移演示台</h3>
             </div>
             <div class="flex space-x-1.5">
-              <button id="btn-queue-start" class="px-3 py-1 bg-pink-600 hover:bg-pink-700 text-white rounded-lg text-xs font-medium transition shadow-2xs">开启服务台</button>
-              <button id="btn-queue-stop" class="px-3 py-1 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-xs font-medium transition">暂停</button>
+              <button id="btn-queue-start" class="px-3.5 py-1.5 bg-pink-600 hover:bg-pink-500 text-white rounded-xl text-xs font-bold transition shadow-md">开启动态服务</button>
+              <button id="btn-queue-stop" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-medium transition border border-slate-700">暂停</button>
             </div>
           </div>
 
-          <div class="flex items-center space-x-4 mb-3 text-xs">
-            <span class="font-semibold text-gray-700">顾客平均到达强度 $\\lambda$：</span>
-            <input type="range" id="input-queue-lambda" min="0.4" max="1.5" step="0.05" value="0.8" class="w-36" />
-            <span id="val-queue-lambda" class="font-mono font-bold text-pink-600 text-sm">0.80</span>
+          <div class="flex items-center space-x-4 mb-3 text-xs bg-slate-900/60 p-2.5 rounded-xl border border-slate-800">
+            <span class="font-semibold text-slate-400">顾客平均到达率 $\lambda$：</span>
+            <input type="range" id="input-queue-lambda" min="0.4" max="1.5" step="0.05" value="0.8" class="w-36 accent-pink-500" />
+            <span id="val-queue-lambda" class="font-mono font-bold text-pink-400 text-sm">0.80</span>
           </div>
 
-          <div class="relative w-full h-64 bg-gray-50 border border-gray-100 rounded-xl overflow-hidden mb-3">
+          <div class="relative w-full h-64 bg-[#070a12] border border-slate-800 rounded-2xl overflow-hidden mb-3.5 shadow-inner">
             <canvas id="canvas-queue" width="550" height="256" class="w-full h-full block"></canvas>
           </div>
 
-          <div class="grid grid-cols-3 gap-2 bg-gray-50 p-2.5 rounded-xl text-center text-xs">
-            <div><span class="text-gray-400 block">排队人数</span><span id="queue-len" class="font-bold text-blue-600 text-sm">0</span></div>
-            <div><span class="text-gray-400 block">漂移项 (λ - 1)</span><span id="queue-drift" class="font-bold text-gray-700 text-xs">-0.20 (每步平均)</span></div>
-            <div><span class="text-gray-400 block">系统状态</span><span id="queue-status" class="font-bold text-xs leading-tight text-emerald-600">正常返</span></div>
+          <div class="grid grid-cols-3 gap-2 bg-slate-900/80 p-3 rounded-2xl text-center text-xs border border-slate-800">
+            <div><span class="text-slate-500 block mb-0.5">当前排队人数</span><span id="queue-len" class="font-mono font-bold text-cyan-400 text-base">0</span></div>
+            <div><span class="text-slate-500 block mb-0.5">漂移项 (λ - 1)</span><span id="queue-drift" class="font-mono font-bold text-slate-300 text-xs">-0.20</span></div>
+            <div><span class="text-slate-500 block mb-0.5">稳态分类</span><span id="queue-status" class="font-bold text-xs leading-tight text-emerald-400">正常返 (安全)</span></div>
           </div>
-          <p class="text-[11px] text-gray-500 mt-2">✨ <strong>理论定律：</strong> 当 $\\lambda < 1$ 时漂移满足 Foster 负增量判据 $\\Delta V \\le -1$；当 $\\lambda > 1$ 时队伍永久爆炸！</p>
+          <p class="text-[11px] text-slate-400 mt-2.5 leading-relaxed">
+            ✨ <strong>数理内核：</strong> 当 $\lambda < 1$ 时满足 Foster 强负漂移判据 $\Delta V \le -1$，队列快速归零；当 $\lambda > 1$ 时单步漂移向外发散，排队人数线性暴涨！
+          </p>
         </div>
 
       </div>
@@ -323,16 +399,16 @@
 
     <!-- VIEW 4: Searchable Codex & Exercises View -->
     <div id="view-codex" class="view-section hidden flex-1 flex flex-col">
-      <div class="flex items-center justify-between mb-4">
+      <div class="flex items-center justify-between mb-5 bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
         <div>
-          <h2 class="text-lg font-bold text-gray-900">第一章全量讲义与习题秒查字典</h2>
-          <p class="text-xs text-gray-500">收录原书第1章全部定义、定理、引理、命题、推论、例子和课后习题</p>
+          <h2 class="text-lg font-extrabold text-white tracking-tight">第一章全量讲义与习题秒查字典</h2>
+          <p class="text-xs text-slate-400">完整索引原书第1章 71 个条目（定义、定理、引理、命题、推论、例子和课后练习）</p>
         </div>
-        <span id="codex-count" class="px-3 py-1 bg-blue-50 text-blue-700 rounded-full font-bold text-xs">加载中...</span>
+        <span id="codex-count" class="px-3.5 py-1 bg-blue-500/20 text-sky-300 border border-blue-500/30 rounded-full font-bold text-xs font-mono">加载中...</span>
       </div>
 
       <!-- Cards Grid -->
-      <div id="codex-items-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div id="codex-items-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-12">
         <!-- Populated via renderCodexList() -->
       </div>
     </div>
@@ -340,13 +416,15 @@
   </main>
 
   <!-- Footer -->
-  <footer class="bg-white border-t border-gray-200 py-4 text-center text-xs text-gray-500">
-    <p>离散时间马尔科夫链 (Discrete-Time Markov Chains) · 全景可视化讲义与显微镜证明工作台</p>
-    <p class="mt-1 text-[11px] text-gray-400">基于南京大学数学系 戴雄平教授《应用随机过程》讲义 Chapter 1 · 面向直观理解与零跳步证明教学设计</p>
+  <footer class="bg-[#0b0f19] border-t border-slate-800/80 py-4 text-center text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+      <p>离散时间马尔科夫链 · 全景可视化讲义与显微镜证明工作台</p>
+      <p class="text-[11px] text-slate-500">南京大学数学系 戴雄平教授《应用随机过程》讲义 Chapter 1 · 面向数学初学者的高阶降维教学设计</p>
+    </div>
   </footer>
 
   <!-- Inlined All-in-One Data & Engines (Zero Dependency) -->
-<script>
+  <script>
 // Section 1.1: 基础概念、C-K方程、互通与周期性 (pp. 35 - 40)
 window.SECTION_1_1 = [
   {
@@ -359,7 +437,7 @@ window.SECTION_1_1 = [
     summary: "未来只取决于当下，与过去走过的路径条件独立。",
     intuitiveAnalogy: "就像玩掷骰子跳格子游戏：你下一步能跳到哪里、概率是多少，完全取决于你『当前站在哪一格』，跟你之前是怎么绕过来的没有半点关系。过去的历史被浓缩在了当前的状态中。",
     mathStatement: `设 $(\\Omega, \\mathcal{F}, P)$ 为概率空间，$S$ 为有限或可数状态空间。离散时间随机过程 $X = (X_n: \\Omega \\to S \\mid n = 0, 1, 2, \\dots)$ 称为**马尔科夫链 (Markov Chain)**，若对任意时刻 $0 \\le n_1 < n_2 < \\dots < n_k < n$ 及任意状态 $i_1, \\dots, i_k, j \\in S$，只要条件概率有意义（即 $P(X_{n_1}=i_1, \\dots, X_{n_k}=i_k) > 0$），均满足：
-$$P\\{X_n = j \\mid X_{n_1} = i_1, \\dots, X_{n_k} = i_k\\} = P\\{X_n = j \\mid X_{n_k} = i_k\\}$$`,
+$P\\{X_n = j \\mid X_{n_1} = i_1, \\dots, X_{n_k} = i_k\\} = P\\{X_n = j \\mid X_{n_k} = i_k\\}$`,
     blueprint: "将复杂的历史条件概率简化为仅由最近时刻状态决定的单点条件概率。",
     microProof: [
       {
@@ -386,7 +464,7 @@ $$P\\{X_n = j \\mid X_{n_1} = i_1, \\dots, X_{n_k} = i_k\\} = P\\{X_n = j \\mid 
     summary: "不仅一步未来由当下决定，整个未来的有限步轨迹作为一个整体，也仅由当下决定。",
     intuitiveAnalogy: "如果你想预测接下来连续5天每天的天气序列，在已知『今天天气』的情况下，查阅『前天、大前天的天气预报』对预测这一串未来没有任何额外帮助。",
     mathStatement: `若 $X$ 是马尔科夫链，证明对任意 $0 \\le n_1 < \\dots < n_k < n$ 及 $m \\ge 1$：
-$$P\\{X_n = j, X_{n+1} = j_1, \\dots, X_{n+m} = j_m \\mid X_{n_1} = i_1, \\dots, X_{n_k} = i_k\\} = P\\{X_n = j, X_{n+1} = j_1, \\dots, X_{n+m} = j_m \\mid X_{n_k} = i_k\\}$$`,
+$P\\{X_n = j, X_{n+1} = j_1, \\dots, X_{n+m} = j_m \\mid X_{n_1} = i_1, \\dots, X_{n_k} = i_k\\} = P\\{X_n = j, X_{n+1} = j_1, \\dots, X_{n+m} = j_m \\mid X_{n_k} = i_k\\}$`,
     blueprint: "利用条件概率的乘法公式，将联合未来分解为从当下一路向前的一步转移之积，再逐级应用马氏性消去旧历史。",
     microProof: [
       {
@@ -424,10 +502,10 @@ $$P\\{X_n = j, X_{n+1} = j_1, \\dots, X_{n+m} = j_m \\mid X_{n_1} = i_1, \\dots,
     summary: "用矩阵乘法精准刻画随机过程在空间上的流动演变。",
     intuitiveAnalogy: "如果把状态想象成城市，转移矩阵就是城市间的客流比例表。今天从A市到B市的比例乘明天从B市到C市的比例，穷举中间所有经转城市加起来，就是两天后从A到C的总客流比例——这就是矩阵乘法的精髓！",
     mathStatement: `设 $P(X_n=i) > 0$，定义一步转移概率：
-$$p_{ij}^{(n, +1)} = P\\{X_{n+1} = j \\mid X_n = i\\}$$
+$p_{ij}^{(n, +1)} = P\\{X_{n+1} = j \\mid X_n = i\\}$
 其构成的矩阵 $P^{(n,+1)} = [p_{ij}^{(n,+1)}]_{S \\times S}$ 称为**马氏矩阵 (Markov Matrix)**，满足非负性 $p_{ij} \\ge 0$ 及行和为 1：$\\sum_{j \\in S} p_{ij} = 1$。
 若转移概率与当前时间 $n$ 无关，称过程为**时间齐次 (time-homogeneous)**，记 $P = [p_{ij}]$，则 $\\ell$ 步转移矩阵满足 **Chapman-Kolmogorov 方程**：
-$$P^{(\\ell)} = P^\\ell, \\quad P^{(m+n)} = P^m P^n, \\quad \\text{即 } p_{ij}^{(m+n)} = \\sum_{k \\in S} p_{ik}^{(m)} p_{kj}^{(n)}$$`,
+$P^{(\\ell)} = P^\\ell, \\quad P^{(m+n)} = P^m P^n, \\quad \\text{即 } p_{ij}^{(m+n)} = \\sum_{k \\in S} p_{ik}^{(m)} p_{kj}^{(n)}$`,
     blueprint: "利用全概率公式在中间时刻 $m$ 插入切片状态，求和即对应矩阵的乘法规则。",
     microProof: [
       {
@@ -466,7 +544,7 @@ $$P^{(\\ell)} = P^\\ell, \\quad P^{(m+n)} = P^m P^n, \\quad \\text{即 } p_{ij}^
     intuitiveAnalogy: "(i) 每秒抛一枚硬币看朝向：无论刚才出正面还是反面，下一秒正面的概率永远是相同的一行数据；(ii) 存钱罐：今天罐里的钱 = 昨天的钱 + 今天投的零钱，因此矩阵转移只取决于『差值』，形成沿着对角线平移的阶梯。",
     mathStatement: `设 $\\xi$ 是 $\\mathbb{Z}_+$ 上的随机变量，$P\\{\\xi = i\\} = a_i, a_i \\ge 0, \\sum a_i = 1$。$\\xi_1, \\xi_2, \\dots$ 为独立样本。
 (i) 定义 $X_0 = \\xi, X_n = \\xi_n (n \\ge 1)$，则 $X$ 是马氏链，转移矩阵各行相同：
-$$P = \\begin{bmatrix} a_0 & a_1 & a_2 & \\dots \\\\ a_0 & a_1 & a_2 & \\dots \\\\ a_0 & a_1 & a_2 & \\dots \\end{bmatrix}$$
+$P = \\begin{bmatrix} a_0 & a_1 & a_2 & \\dots \\\\ a_0 & a_1 & a_2 & \\dots \\\\ a_0 & a_1 & a_2 & \\dots \\end{bmatrix}$
 (ii) 定义 $\\eta_0 = 0, \\eta_n = \\sum_{k=1}^n \\xi_k (n \\ge 1)$，则 $\\eta$ 是马氏链，转移概率 $p_{ij} = a_{j-i} (j \\ge i)$，其余为 0。`,
     blueprint: "对(i)利用独立性直接验证条件等于边缘分布；对(ii)利用独立增量将条件化简为差值概率。",
     microProof: [
@@ -529,7 +607,7 @@ $$P = \\begin{bmatrix} a_0 & a_1 & a_2 & \\dots \\\\ a_0 & a_1 & a_2 & \\dots \\
     intuitiveAnalogy: "赌徒手握 $k$ 元钱跟赌场玩游戏，赢了+1元，输了-1元。如果资金降到0元就被赌场扫地出门（吸收壁），再也无法翻身；如果赢率 $p \\le q$，无论初始资金多少，长远看注定倾家荡产！",
     mathStatement: `一维随机游走状态在 $\\mathbb{Z}_+$，每一步只在相邻状态转移：$p_{i, i-1} + p_{i, i} + p_{i, i+1} = 1$。
 转移矩阵为三对角形式：
-$$P = \\begin{bmatrix} r_0 & p_0 & 0 & 0 & \\dots \\\\ q_1 & r_1 & p_1 & 0 & \\dots \\\\ 0 & q_2 & r_2 & p_2 & \\dots \\end{bmatrix}$$
+$P = \\begin{bmatrix} r_0 & p_0 & 0 & 0 & \\dots \\\\ q_1 & r_1 & p_1 & 0 & \\dots \\\\ 0 & q_2 & r_2 & p_2 & \\dots \\end{bmatrix}$
 若 $r_0=1$（状态0为吸收态），且对 $k \\ge 1, p_k=p, q_k=q=1-p$：
 (i) 当 $p > q$ 时，初始本金为 $x_0$ 的赌徒最终破产概率为 $(q/p)^{x_0} < 1$，有正概率财富无限增长；
 (ii) 当 $p \\le q$ 时，破产概率恒为 $1$。`,
@@ -600,7 +678,7 @@ $$P = \\begin{bmatrix} r_0 & p_0 & 0 & 0 & \\dots \\\\ q_1 & r_1 & p_1 & 0 & \\d
     summary: "两状态互通意味着不仅各自步数存在，而且可以一次性观测到完整回路。",
     intuitiveAnalogy: "从家去公司有车，从公司回家也有车，那么『今天从家出发到公司、下班又准时回到家』这一完整行程发生的概率一定是正数。",
     mathStatement: `若不同状态 $i, j$ 互通 ($i \\leftrightsquigarrow j$)，证明存在 $n, m > 0$ 使得：
-$$P\\{X_0 = i, X_n = j, X_{n+m} = i\\} > 0$$`,
+$P\\{X_0 = i, X_n = j, X_{n+m} = i\\} > 0$`,
     blueprint: "使用乘法公式分解为初始概率、前向转移与返回转移的乘积。",
     microProof: [
       {
@@ -636,7 +714,7 @@ $$P\\{X_0 = i, X_n = j, X_{n+m} = i\\} > 0$$`,
     summary: "在已知当下的条件下，『历史』与『未来』相互独立，体现了马氏性的本质几何对称性。",
     intuitiveAnalogy: "两道门：你目前被锁在门厅（当下）。前门里走过的迷宫（过去）和后门将要面对的花园（未来），在门厅这个中转站被物理隔断，彼此不再能隔空产生感应。",
     mathStatement: `设 $m \\ge 1$。对任意过去事件 $A \\in \\sigma(X_l \\mid l < m)$ 及未来事件 $B \\in \\sigma(X_l \\mid l > m)$，均有：
-$$P\\{A \\cap B \\mid X_m = i\\} = P\\{A \\mid X_m = i\\} \\cdot P\\{B \\mid X_m = i\\}$$`,
+$P\\{A \\cap B \\mid X_m = i\\} = P\\{A \\mid X_m = i\\} \\cdot P\\{B \\mid X_m = i\\}$`,
     blueprint: "利用 $\\pi-\\lambda$ 定理，先在圆柱集上验证，通过条件期望的平滑性质消去历史项。",
     microProof: [
       {
@@ -703,7 +781,7 @@ $$P\\{A \\cap B \\mid X_m = i\\} = P\\{A \\mid X_m = i\\} \\cdot P\\{B \\mid X_m
     summary: "质点回访某状态所花费步数的最大公约数，刻画了系统节律性的脉搏。",
     intuitiveAnalogy: "像一个每隔偶数小时才允许你进门的车站。如果你只能在第 2, 4, 6, 8... 小时回到原点，周期的最大公约数就是 2。若周期为 1，说明步数不再受任何固定节拍锁死，可以随时回归。",
     mathStatement: `状态 $i$ 的**周期 (Period)** $d_i$ 定义为所有使其自身回访概率大于零的步数 $n \\ge 1$ 的最大公约数 (greatest common divisor)：
-$$d_i = \\gcd\\{n \\ge 1 \\mid p_{ii}^{(n)} > 0\\}$$
+$d_i = \\gcd\\{n \\ge 1 \\mid p_{ii}^{(n)} > 0\\}$
 若对所有 $n \\ge 1$ 均有 $p_{ii}^{(n)} = 0$，则定义 $d_i = \\infty$。
 若一个马氏链中所有状态的周期均为 1，则称该马氏链为**非周期的 (Aperiodic)**。`,
     blueprint: "刻画自回访步长集合的算术整除特征。",
@@ -769,7 +847,7 @@ $$d_i = \\gcd\\{n \\ge 1 \\mid p_{ii}^{(n)} > 0\\}$$
     summary: "只要周期有限，当步数是周期的倍数且倍数足够大时，回访概率必定严格大于零。",
     intuitiveAnalogy: "若硬币面额只有 5 块和 7 块（公约数为 1），小钱凑不出，但只要钱数超过某个门槛（如 24 块以上），每一块钱都能用 5 和 7 凑出来！",
     mathStatement: `设状态 $i$ 的周期 $d_i < \\infty$，则存在自然数 $N$（仅依赖于状态 $i$），使得对所有 $n \\ge N$，均有：
-$$p_{ii}^{(n d_i)} > 0$$`,
+$p_{ii}^{(n d_i)} > 0$`,
     blueprint: "利用数论中的半群引理（Frobenius 硬币问题/Schur 半群定理）：由公约数为 $d$ 的半群，其元素最终必定覆盖所有充分大的 $d$ 的倍数。",
     microProof: [
       {
@@ -807,7 +885,7 @@ $$p_{ii}^{(n d_i)} > 0$$`,
     summary: "同甘共苦的朋友圈：只要两个状态互通，它们的周期必定一模一样。",
     intuitiveAnalogy: "同一个旋转木马上的两个人，无论一人坐在龙头，另一人坐在龙尾，两个人转回原位的周期节拍必定是完全相同的。",
     mathStatement: `若状态 $i$ 与状态 $j$ 互通 ($i \\leftrightsquigarrow j$)，则它们的周期相等：
-$$d_i = d_j$$`,
+$d_i = d_j$`,
     blueprint: "通过双向通道拼成回访环，利用整除关系推导 $d_i \\mid d_j$ 且 $d_j \\mid d_i$，从而相等。",
     microProof: [
       {
@@ -857,7 +935,7 @@ $$d_i = d_j$$`,
     summary: "只要一旦能到，再加上足够多轮周期循环后，也必定都能走到。",
     intuitiveAnalogy: "公交车只要有一班能带你从A到B，那么等线路跑通充分多圈后，每一班正点周期车次都能顺利把你送到B。",
     mathStatement: `若 $p_{ij}^{(m)} > 0$ 且 $d_j < \\infty$，则对所有充分大的 $n$，均有：
-$$p_{ij}^{(m + n d_j)} > 0$$`,
+$p_{ij}^{(m + n d_j)} > 0$`,
     blueprint: "利用 $p_{ij}^{(m+nd_j)} \\ge p_{ij}^{(m)} p_{jj}^{(nd_j)}$ 和定理 1.1.5 即可秒证。",
     microProof: [
       {
@@ -923,7 +1001,7 @@ $$p_{ij}^{(m + n d_j)} > 0$$`,
 ];
 
 </script>
-<script>
+  <script>
 // Section 1.2: 常返与非常返状态 (pp. 41 - 51)
 window.SECTION_1_2 = [
   {
@@ -936,9 +1014,9 @@ window.SECTION_1_2 = [
     summary: "从一个状态出发，以概率 1 在未来的岁月里无限次重新回到该状态，称为常返；否则叫非常返（瞬时）。",
     intuitiveAnalogy: "常返就像『命中注定的老朋友』，无论你走到天涯海角多少次，一生中必定会与他重逢无数次；非常返就像『旅途中的过客』，随着时间推移，你离开他之后，可能就再也不会回来了。",
     mathStatement: `设 $X = (X_n)_{n \\ge 0}$ 为时间齐次马氏链。状态 $i \\in S$ 称为**常返的 (Recurrent)**，若满足：
-$$P\\{\\omega \\in \\Omega \\mid \\exists n_k(\\omega) \\nearrow +\\infty \\text{ s.t. } X_{n_k}(\\omega) = i \\mid X_0 = i\\} = 1$$
+$P\\{\\omega \\in \\Omega \\mid \\exists n_k(\\omega) \\nearrow +\\infty \\text{ s.t. } X_{n_k}(\\omega) = i \\mid X_0 = i\\} = 1$
 等价地（利用上极限事件记号）：
-$$P\\{X_n = i \\text{ i.o.} \\mid X_0 = i\\} = P\\left( \\limsup_{n \\to \\infty} \\{X_n = i\\} \\,\\Big|\\, X_0 = i \\right) = 1$$
+$P\\{X_n = i \\text{ i.o.} \\mid X_0 = i\\} = P\\left( \\limsup_{n \\to \\infty} \\{X_n = i\\} \\,\\Big|\\, X_0 = i \\right) = 1$
 （其中 $\\text{i.o.}$ 表示 infinitely often，即无限次发生）。若该概率不为 1，则称状态 $i$ 为**非常返的 (Nonrecurrent)** 或**瞬时的 (Transient)**。
 注：若状态 $i$ 常返，其周期必为有限数 $d_i < \\infty$。`,
     blueprint: "用事件上极限严格数学化『无限次回访』的动态概念。",
@@ -966,7 +1044,7 @@ $$P\\{X_n = i \\text{ i.o.} \\mid X_0 = i\\} = P\\left( \\limsup_{n \\to \\infty
     summary: "状态 $i$ 常返，当且仅当它的一步步转移回访概率累加级数发散到无穷大！",
     intuitiveAnalogy: "每次回访像向许愿池投一枚硬币，投币面额是 $p_{ii}^{(n)}$。如果所有可能时刻期望收到的硬币总和发散（无穷多枚），说明回访次数也是无穷；如果总和收敛到一个有限数字，说明期望回访有限次，必定非常返。",
     mathStatement: `状态 $i \\in S$ 是常返的，充分必要条件是其各步自回访概率构成的无穷级数发散：
-$$i \\text{ 是常返态 } \\iff \\sum_{n=1}^\\infty p_{ii}^{(n)} = +\\infty$$`,
+$i \\text{ 是常返态 } \\iff \\sum_{n=1}^\\infty p_{ii}^{(n)} = +\\infty$`,
     blueprint: "必要性由第一 Borel-Cantelli 引理直接得出；充分性通过第一到达时间卷积公式与截断级数反证法完成严格构造。",
     microProof: [
       {
@@ -1004,7 +1082,7 @@ $$i \\text{ 是常返态 } \\iff \\sum_{n=1}^\\infty p_{ii}^{(n)} = +\\infty$$`,
     summary: "无限次回访的概率只有两种极端：要么是 0，要么是 1，绝不可能出现中间概率（如 0.5）。",
     intuitiveAnalogy: "这就像量子跃迁或命运裁决：质点对老家的眷恋没有中间地带。只要它有一丝可能无限次回家（概率大于0），它就必定以绝对的确定性（概率等于1）无限次回家！",
     mathStatement: `状态 $i$ 是常返的，充要条件是无限次回访概率严格大于 0：
-$$P\\{X_n = i \\text{ i.o.} \\mid X_0 = i\\} > 0 \\iff P\\{X_n = i \\text{ i.o.} \\mid X_0 = i\\} = 1$$
+$P\\{X_n = i \\text{ i.o.} \\mid X_0 = i\\} > 0 \\iff P\\{X_n = i \\text{ i.o.} \\mid X_0 = i\\} = 1$
 换言之，若状态 $i$ 非常返，则质点以概率 1 最终彻底离开状态 $i$ 且不再复返。`,
     blueprint: "若该概率大于0，由定理 1.2.1 的逆否命题必有级数发散，再由定理 1.2.1 充分性推得其概率必定等于1。",
     microProof: [
@@ -1037,11 +1115,11 @@ $$P\\{X_n = i \\text{ i.o.} \\mid X_0 = i\\} > 0 \\iff P\\{X_n = i \\text{ i.o.}
     summary: "把复杂的反复回访，解构成一次次独立的『第一次命中』。",
     intuitiveAnalogy: "你投飞镖，可能命中了靶心很多次。但分析这一切的关键是：你在『第几镖』第一次射中靶心？第一次命中的时刻，就是划分过去与未来的神圣时间节点。",
     mathStatement: `对任意状态 $j \\in S$，定义**首次到达时间 (First Visiting Instant)** 随机变量 $T_j: \\Omega \\to \\{1, 2, \\dots\\} \\cup \\{\\infty\\}$：
-$$T_j(\\omega) = \\begin{cases} \\min\\{n \\ge 1 \\mid X_n(\\omega) = j\\} & \\text{若存在 } n \\ge 1 \\text{ 使得 } X_n = j \\\\ \\infty & \\text{若对所有 } n \\ge 1 \\text{ 均有 } X_n \\ne j \\end{cases}$$
+$T_j(\\omega) = \\begin{cases} \\min\\{n \\ge 1 \\mid X_n(\\omega) = j\\} & \\text{若存在 } n \\ge 1 \\text{ 使得 } X_n = j \\\\ \\infty & \\text{若对所有 } n \\ge 1 \\text{ 均有 } X_n \\ne j \\end{cases}$
 定义从 $i$ 出发在第 $m$ 步首次到达 $j$ 的概率：
-$$f_{ij}^{(m)} = P\\{T_j = m \\mid X_0 = i\\} = P\\{X_m = j, X_k \\ne j (1 \\le k < m) \\mid X_0 = i\\}$$
+$f_{ij}^{(m)} = P\\{T_j = m \\mid X_0 = i\\} = P\\{X_m = j, X_k \\ne j (1 \\le k < m) \\mid X_0 = i\\}$
 定义从 $i$ 出发在有限步内到达 $j$ 的累积概率：
-$$f_{ij}^* = \\sum_{m=1}^\\infty f_{ij}^{(m)} = P\\{T_j < \\infty \\mid X_0 = i\\} \\quad (0 \\le f_{ij}^* \\le 1)$$`,
+$f_{ij}^* = \\sum_{m=1}^\\infty f_{ij}^{(m)} = P\\{T_j < \\infty \\mid X_0 = i\\} \\quad (0 \\le f_{ij}^* \\le 1)$`,
     blueprint: "利用击中时刻 $T_j$ 的可测性与不相交事件和定义击中分布。",
     microProof: [
       {
@@ -1074,7 +1152,7 @@ $$f_{ij}^* = \\sum_{m=1}^\\infty f_{ij}^{(m)} = P\\{T_j < \\infty \\mid X_0 = i\
     intuitiveAnalogy: "房间是封闭的（有限状态），只要每个房间都能互通，任凭你瞎走，每过 $M$ 步就有保底概率 $\\delta$ 撞进目标房间。因此连续 $k$ 次都没撞进的概率像 $(1-\\delta)^k$ 一样断崖式下跌！",
     mathStatement: `设 $X$ 是有限状态空间 $S = \\{1, \\dots, N\\} (N < \\infty)$ 上的不可约马氏链。证明：
 (1) 存在常数 $C > 0$ 及 $0 < \\rho < 1$，使得尾概率指数衰减：
-$$\\sum_{m > n} f_{ij}^{(m)} = P\\{T_j > n \\mid X_0 = i\\} \\le C \\rho^n \\quad (\\forall 1 \\le i, j \\le N, n \\ge 1)$$
+$\\sum_{m > n} f_{ij}^{(m)} = P\\{T_j > n \\mid X_0 = i\\} \\le C \\rho^n \\quad (\\forall 1 \\le i, j \\le N, n \\ge 1)$
 (2) 平均首次到达时间有限：$1 \\le m_{ij} := E[T_j \\mid X_0 = i] < \\infty$。`,
     blueprint: "取 $M$ 步保证从任何点到达 $j$ 的概率有一致正下界 $\\delta$，利用马氏性按块归纳得到几何衰减。",
     microProof: [
@@ -1164,7 +1242,7 @@ $$\\sum_{m > n} f_{ij}^{(m)} = P\\{T_j > n \\mid X_0 = i\\} \\le C \\rho^n \\qua
     summary: "无限次回访的本质，就是每一次出发后，必定能以 100% 的概率完成至少一次回归！",
     intuitiveAnalogy: "只要你能保证『无论离家多远，最后一定能回来一次』，那么当你回来之后，你就是重新站在了起跑线上。既然每次都能回来一次，如此循环往复，你自然就能回来无限次！",
     mathStatement: `状态 $i$ 是常返的，当且仅当其首次回访累积概率等于 1：
-$$i \\text{ 是常返态 } \\iff f_{ii}^* = 1$$
+$i \\text{ 是常返态 } \\iff f_{ii}^* = 1$
 （在许多经典教材中，直接将 $f_{ii}^* = 1$ 作为常返的定义）。`,
     blueprint: "必要性由无穷包含关系给出；充分性通过反证法，假设 $f_{ii}^* < 1$，利用齐次马氏性推导出可能永久逃逸，从而非无限次回访。",
     microProof: [
@@ -1221,7 +1299,7 @@ $$i \\text{ 是常返态 } \\iff f_{ii}^* = 1$$
     summary: "第 $n$ 步到达 $j$ 的总概率，等于在第 $m$ 步首次到达 $j$、随后 $n-m$ 步内又回到 $j$ 的所有可能途径的求和！",
     intuitiveAnalogy: "你今天在第 $n$ 分钟出现在咖啡馆，这只有几种可能：要么你第 1 分钟第一次到，后面又闲逛回来；要么你第 2 分钟第一次到……穷举你『人生中第一次进这家咖啡馆』的分钟数，全部加起来就是总概率。",
     mathStatement: `对任意两状态 $i, j \\in S$ 及任意 $n \\ge 1$，均有：
-$$p_{ij}^{(n)} = \\sum_{m=1}^n f_{ij}^{(m)} p_{jj}^{(n-m)}$$
+$p_{ij}^{(n)} = \\sum_{m=1}^n f_{ij}^{(m)} p_{jj}^{(n-m)}$
 （规定 $p_{jj}^{(0)} = 1$）。`,
     blueprint: "按照『首次进入状态 $j$ 发生在第 $m$ 步』对事件空间进行不相交切片划分。",
     microProof: [
@@ -1273,9 +1351,9 @@ $$p_{ij}^{(n)} = \\sum_{m=1}^n f_{ij}^{(m)} p_{jj}^{(n-m)}$$
     intuitiveAnalogy: "想算出你一辈子去朋友家串门的期望总次数？它等于：『你这辈子至少去过他家一次的概率』乘以『他自己这辈子在家的期望总天数』！",
     mathStatement: `对任意 $i, j \\in S$ 及任意 $N \\ge 1$：
 (1) 完整无穷级数恒等式：
-$$\\sum_{n=1}^\\infty p_{ij}^{(n)} = f_{ij}^* \\sum_{n=0}^\\infty p_{jj}^{(n)}$$
+$\\sum_{n=1}^\\infty p_{ij}^{(n)} = f_{ij}^* \\sum_{n=0}^\\infty p_{jj}^{(n)}$
 (2) 有限截断不等式：
-$$\\sum_{n=1}^N p_{ij}^{(n)} \\le \\sum_{m=1}^N f_{ij}^{(m)} \\sum_{n=0}^N p_{jj}^{(n)}$$`,
+$\\sum_{n=1}^N p_{ij}^{(n)} \\le \\sum_{m=1}^N f_{ij}^{(m)} \\sum_{n=0}^N p_{jj}^{(n)}$`,
     blueprint: "将引理 1.2.6 的卷积公式代入双重级数，利用非负项求和的 Fubini/Tonelli 定理交换求和顺序。",
     microProof: [
       {
@@ -1325,7 +1403,7 @@ $$\\sum_{n=1}^N p_{ij}^{(n)} \\le \\sum_{m=1}^N f_{ij}^{(m)} \\sum_{n=0}^N p_{jj
     summary: "非常返状态的所有自回访概率总和，可以通过初等几何级数求和公式精确计算！",
     intuitiveAnalogy: "这就像掷硬币直到第一次失败：每次能够成功重返原点的概率都是 $f_{ii}^* < 1$。总访问次数就是参数为 $1-f_{ii}^*$ 的几何分布，期望总次数正是 $\\frac{1}{1-f_{ii}^*}$！",
     mathStatement: `对任意非常返状态 $i \\in S$（此时 $f_{ii}^* < 1$），自转移概率之和满足：
-$$\\sum_{n=1}^\\infty p_{ii}^{(n)} = \\frac{f_{ii}^*}{1 - f_{ii}^*} < \\infty \\quad \\Longleftrightarrow \\quad \\sum_{n=0}^\\infty p_{ii}^{(n)} = \\frac{1}{1 - f_{ii}^*}$$`,
+$\\sum_{n=1}^\\infty p_{ii}^{(n)} = \\frac{f_{ii}^*}{1 - f_{ii}^*} < \\infty \\quad \\Longleftrightarrow \\quad \\sum_{n=0}^\\infty p_{ii}^{(n)} = \\frac{1}{1 - f_{ii}^*}$`,
     blueprint: "在引理 1.2.7 的恒等式 (*) 中令 $j = i$，将常数项移项合并直接求解代数方程。",
     microProof: [
       {
@@ -1421,7 +1499,7 @@ $$\\sum_{n=1}^\\infty p_{ii}^{(n)} = \\frac{f_{ii}^*}{1 - f_{ii}^*} < \\infty \\
     summary: "随着时间无限推移，质点落在任何一个非常返状态的概率都必将衰减至绝对的零！",
     intuitiveAnalogy: "瞬时状态就像一间漏沙的房间：沙子可能会在里面停留一阵子，但时间足够久之后，所有的沙子都会彻底漏光流走，房间里空空如也，概率密度归零。",
     mathStatement: `若状态 $j \\in S$ 是非常返的，则对任意起点 $i \\in S$，转移概率在时间无穷远处必定衰减为零：
-$$\\lim_{n \\to \\infty} p_{ij}^{(n)} = 0 \\quad (\\forall i \\in S)$$`,
+$\\lim_{n \\to \\infty} p_{ij}^{(n)} = 0 \\quad (\\forall i \\in S)$`,
     blueprint: "利用引理 1.2.7 说明级数 $\\sum_{n=1}^\\infty p_{ij}^{(n)}$ 收敛，再由收敛级数的通项必趋于 0 秒杀。",
     microProof: [
       {
@@ -1453,7 +1531,7 @@ $$\\lim_{n \\to \\infty} p_{ij}^{(n)} = 0 \\quad (\\forall i \\in S)$$`,
     summary: "从常返态出发看世界：任何状态要么你绝对去不了（概率为0），只要有一丝机会能去，就必定能100%到达（概率为1）！",
     intuitiveAnalogy: "常返世界绝不玩暧昧：如果从家出发有机会遇到一个人，你就一定会百分之百遇到他；根本不存在『有 30% 几率遇到、70% 几率遇不到』这种薛定谔概率。",
     mathStatement: `设状态 $i$ 是常返的，对任意 $j \\in S$，累积到达概率 $f_{ij}^*$ 只能取值 0 或 1：
-$$f_{ij}^* \\in \\{0, 1\\}, \\quad \\text{即 } i \\leadsto j (f_{ij}^* > 0) \\iff f_{ij}^* = 1$$
+$f_{ij}^* \\in \\{0, 1\\}, \\quad \\text{即 } i \\leadsto j (f_{ij}^* > 0) \\iff f_{ij}^* = 1$
 （讲义提供两种完全不同的绝妙证明：戴雄平教授原证明与学生构造的替代证明）。`,
     blueprint: "证明思路A（戴教授）：利用测度连续性与反证法；证明思路B（学生法）：利用可达步数拆解与全概率展开。",
     microProof: [
@@ -1608,9 +1686,9 @@ $$f_{ij}^* \\in \\{0, 1\\}, \\quad \\text{即 } i \\leadsto j (f_{ij}^* > 0) \\i
     intuitiveAnalogy: "在一根细绳上走钢丝，如果有一丝向右的顺风（$p > 1/2$），你就会随着风一路漂向右侧无穷远，永远不可能无限次回踩中点。",
     mathStatement: `考虑 $\\mathbb{Z}$ 上的随机游走，向右概率为 $p$，向左概率为 $q = 1-p$。周期 $d = 2$。
 偶数步自回访概率为：
-$$p_{00}^{(2n)} = \\binom{2n}{n} p^n q^n = \\frac{(2n)!}{n! n!} (pq)^n$$
+$p_{00}^{(2n)} = \\binom{2n}{n} p^n q^n = \\frac{(2n)!}{n! n!} (pq)^n$
 利用 Stirling 公式 $n! \\sim \\sqrt{2\\pi n} n^n e^{-n}$，得到渐近阶：
-$$p_{00}^{(2n)} \\sim \\frac{(4pq)^n}{\\sqrt{\\pi n}}$$
+$p_{00}^{(2n)} \\sim \\frac{(4pq)^n}{\\sqrt{\\pi n}}$
 结论：一维随机游走常返 $\\iff p = q = 1/2$（对称游走）。`,
     blueprint: "展开组合二项式，用 Stirling 公式做渐近分析，通过调和级数判断级数敛散性。",
     microProof: [
@@ -1668,7 +1746,7 @@ $$p_{00}^{(2n)} \\sim \\frac{(4pq)^n}{\\sqrt{\\pi n}}$$
     intuitiveAnalogy: "醉汉在无限大的国际象棋棋盘上随机乱逛（上下左右各 1/4 概率）。奇迹的是：由于维数只有 2，空间还不够宽阔，他无论走多远，宿命依然会把他拉回出生地！",
     mathStatement: `在 $\\mathbb{Z}^2$ 上的对称随机游走，向上下左右转移概率均为 $1/4$。
 走 $2n$ 步回到原点 $(0, 0)$ 的概率为：
-$$p_{00}^{(2n)} = \\left( \\frac{1}{4} \\right)^{2n} \\binom{2n}{n}^2 \\sim \\frac{1}{\\pi n}$$
+$p_{00}^{(2n)} = \\left( \\frac{1}{4} \\right)^{2n} \\binom{2n}{n}^2 \\sim \\frac{1}{\\pi n}$
 由于调和级数发散：$\\sum_{n=1}^\\infty p_{00}^{(2n)} \\sim \\sum_{n=1}^\\infty \\frac{1}{\\pi n} = \\infty$，因此**二维对称随机游走必定常返！**`,
     blueprint: "通过多项式定理展开路径，利用范德蒙恒等式将四项式系数折叠为组合数平方，再由 Stirling 公式得到 $1/n$ 阶。",
     microProof: [
@@ -1726,7 +1804,7 @@ $$p_{00}^{(2n)} = \\left( \\frac{1}{4} \\right)^{2n} \\binom{2n}{n}^2 \\sim \\fr
     intuitiveAnalogy: "角谷静夫曾说：『醉汉最终总能找到回家的路，但喝醉的鸟儿却会永远迷失。』三维空间太广阔了，扩散的自由度多了一个维度，稀释了回家的概率，自回访级数彻底收敛！",
     mathStatement: `在 $\\mathbb{Z}^3$ 上的对称随机游走，向 6 个方向转移概率均为 $1/6$。
 通过多项式最大值放缩，偶数步回访概率满足：
-$$p_{00}^{(2n)} \\le \\frac{3\\sqrt{3}}{2\\pi^{3/2} n^{3/2}}$$
+$p_{00}^{(2n)} \\le \\frac{3\\sqrt{3}}{2\\pi^{3/2} n^{3/2}}$
 由于级数收敛：$\\sum_{n=1}^\\infty \\frac{1}{n^{3/2}} < \\infty$，从而 $\\sum_{n=1}^\\infty p_{00}^{(2n)} < \\infty$。
 结论：**三维对称随机游走是非常返的 (Nonrecurrent / Transient)！**`,
     blueprint: "将多项式系数提取一项利用多项分布性质，对最大项应用 Stirling 公式放缩出 $n^{-3/2}$ 幂次。",
@@ -1784,7 +1862,7 @@ $$p_{00}^{(2n)} \\le \\frac{3\\sqrt{3}}{2\\pi^{3/2} n^{3/2}}$$
     summary: "在三维空间中，无论你在原点周围放一个多大的封闭保险箱，粒子最终都会彻底逃逸，再也不会回来。",
     intuitiveAnalogy: "宇宙飞船在浩瀚太空中随机漂泊，只要空间是三维的，飞船飞离太阳系后，与太阳系重逢的概率趋于零，它注定彻底漂向深空边缘。",
     mathStatement: `设 $X$ 为 $\\mathbb{Z}^3$ 上的对称随机游走。对任意参考点 $o$ 及包含 $o$ 的任意有界盒子 $B \\subset \\mathbb{Z}^3$，证明：
-$$P\\{ \\exists N_\\omega > 0 \\text{ s.t. } X_n(\\omega) \\notin B \\ (\\forall n > N_\\omega) \\mid X_0 = o \\} = 1$$`,
+$P\\{ \\exists N_\\omega > 0 \\text{ s.t. } X_n(\\omega) \\notin B \\ (\\forall n > N_\\omega) \\mid X_0 = o \\} = 1$`,
     blueprint: "利用有界盒子只包含有限个状态，对每个状态调用定理 1.2.10（非常返态访问次数有限个），取有限并集即证。",
     microProof: [
       {
@@ -1828,9 +1906,9 @@ $$P\\{ \\exists N_\\omega > 0 \\text{ s.t. } X_n(\\omega) \\notin B \\ (\\forall
     summary: "从任何地方都可以一步摔回起点：一个充满戏剧性的可解相变模型！",
     intuitiveAnalogy: "汤姆猫捉杰瑞鼠：每成功捉到一次杰瑞（$q_i$ 概率），连胜纪录+1；一旦失手（$p_i$ 概率），连胜纪录瞬间清零（掉回状态0）。老天爷是否会让你连胜到天荒地老？完全取决于连败概率级数是否发散！",
     mathStatement: `状态空间 $\\mathbb{Z}_+ = \\{0, 1, 2, \\dots\\}$。转移矩阵为：
-$$P = \\begin{bmatrix} p_0 & q_0 & 0 & 0 & \\dots \\\\ p_1 & 0 & q_1 & 0 & \\dots \\\\ p_2 & 0 & 0 & q_2 & \\dots \\\\ \\vdots & & & & \\ddots \\end{bmatrix}, \\quad p_i + q_i = 1$$
+$P = \\begin{bmatrix} p_0 & q_0 & 0 & 0 & \\dots \\\\ p_1 & 0 & q_1 & 0 & \\dots \\\\ p_2 & 0 & 0 & q_2 & \\dots \\\\ \\vdots & & & & \\ddots \\end{bmatrix}, \\quad p_i + q_i = 1$
 首次回访原点概率满足：
-$$f_{00}^* = 1 - \\lim_{m \\to \\infty} \\prod_{i=0}^{m-1} (1 - p_i)$$
+$f_{00}^* = 1 - \\lim_{m \\to \\infty} \\prod_{i=0}^{m-1} (1 - p_i)$
 状态 0 常返当且仅当级数发散：$\\sum_{i=0}^\\infty p_i = +\\infty$。`,
     blueprint: "直接计算首次到达分布 $f_{00}^{(n)}$，利用裂项求和技巧折叠级数，化为无穷乘积极限。",
     microProof: [
@@ -1881,7 +1959,7 @@ $$f_{00}^* = 1 - \\lim_{m \\to \\infty} \\prod_{i=0}^{m-1} (1 - p_i)$$
     summary: "无穷多个小于1的因数连乘要想衰减到零，当且仅当每一项偏离1的幅度累加发散。",
     intuitiveAnalogy: "每天你的战斗力被削弱 $p_i$。如果累积削弱量是有限的（$\\sum p_i < \\infty$），你永远能保留一口气不死；只有当削弱总量无穷大时，生命值才会被彻底磨灭至零。",
     mathStatement: `设 $0 < p_i < 1 (i = 0, 1, \\dots)$，则：
-$$\\lim_{m \\to +\\infty} \\prod_{i=0}^m (1 - p_i) = 0 \\iff \\sum_{i=0}^\\infty p_i = \\infty$$`,
+$\\lim_{m \\to +\\infty} \\prod_{i=0}^m (1 - p_i) = 0 \\iff \\sum_{i=0}^\\infty p_i = \\infty$`,
     blueprint: "利用基本不等式 $1 - x \\le e^{-x}$ 与对数泰勒展开完成双向夹逼。",
     microProof: [
       {
@@ -1949,7 +2027,7 @@ $$\\lim_{m \\to +\\infty} \\prod_{i=0}^m (1 - p_i) = 0 \\iff \\sum_{i=0}^\\infty
 ];
 
 </script>
-<script>
+  <script>
 // Section 1.3: 正常返与零常返状态 (pp. 52 - 62)
 window.SECTION_1_3 = [
   {
@@ -2033,7 +2111,7 @@ window.SECTION_1_3 = [
     summary: "同一互通类中的状态同生共死：只要有一对状态之间的转移概率衰减为0，整个类内所有状态对之间的转移概率全部衰减为0！",
     intuitiveAnalogy: "联通的管道系统：只要水管某处彻底干涸，由于处处相通，整套水循环在远期必然全部枯竭。",
     mathStatement: `设 $k \\in S$。若对某个状态对 $i, j \\in C(k)$ 有 $\\lim_{n \\to \\infty} p_{ij}^{(n)} = 0$，证明对类内任意状态对 $i', j' \\in C(k)$，亦必有：
-$$\\lim_{n \\to \\infty} p_{i'j'}^{(n)} = 0$$`,
+$\\lim_{n \\to \\infty} p_{i'j'}^{(n)} = 0$`,
     blueprint: "利用双向可达路径将 $p_{i'j'}^{(n+m+\\ell)}$ 从下方放缩出含有 $p_{ij}^{(m)}$ 的项，再用反向夹逼完成证明。",
     microProof: [
       {
@@ -2071,9 +2149,9 @@ $$\\lim_{n \\to \\infty} p_{i'j'}^{(n)} = 0$$`,
     mathStatement: `设数列 $\\{a_n\\}_{n \\ge 0}$ 满足 $a_n \\ge 0, \\sum_{n=0}^\\infty a_n = 1$，且最大公约数 $\\gcd\\{n \\mid a_n > 0\\} = 1$（非周期）。
 数列 $\\{b_n\\}_{n \\ge 0}$ 绝对可和：$\\sum_{k=0}^\\infty |b_k| < \\infty$。
 若有界实数列 $\\{u_n\\}_{n \\ge 0}$ 满足更新方程：
-$$u_n = \\sum_{k=0}^n a_{n-k} u_k + b_n \\quad (\\forall n \\ge 0)$$
+$u_n = \\sum_{k=0}^n a_{n-k} u_k + b_n \\quad (\\forall n \\ge 0)$
 则极限必存在，且精确等于两级数之比：
-$$\\lim_{n \\to +\\infty} u_n = \\frac{\\sum_{k=0}^\\infty b_k}{\\sum_{k=0}^\\infty k a_k}$$
+$\\lim_{n \\to +\\infty} u_n = \\frac{\\sum_{k=0}^\\infty b_k}{\\sum_{k=0}^\\infty k a_k}$
 （约定：若分母 $\\sum k a_k = \\infty$，则极限为 0）。`,
     blueprint: "此定理为经典 Erdös-Feller-Pollard 更新定理，在马氏链中令 $a_n = f_{jj}^{(n)}, u_n = p_{jj}^{(n)}$ 即能瞬间击穿转移极限。",
     microProof: [
@@ -2112,7 +2190,7 @@ $$\\lim_{n \\to +\\infty} u_n = \\frac{\\sum_{k=0}^\\infty b_k}{\\sum_{k=0}^\\in
     summary: "不可约常返非周期马氏链的终极宿命：长期转移概率精确等于平均回访时间的倒数！",
     intuitiveAnalogy: "如果你回家的平均间隔是 5 天，那么在无限漫长的日子里，任何随机抽查的一天，你在家里的概率就精确等于 1/5！而且这个概率完全不依赖你当年是从哪座城市出发的！",
     mathStatement: `设 $X$ 为不可约、常返、非周期的马氏链。则对任意状态 $i, j \\in S$：
-$$\\lim_{n \\to +\\infty} p_{ij}^{(n)} = \\pi_j = \\frac{1}{m_{jj}} = \\frac{1}{\\sum_{n=1}^\\infty n f_{jj}^{(n)}}$$
+$\\lim_{n \\to +\\infty} p_{ij}^{(n)} = \\pi_j = \\frac{1}{m_{jj}} = \\frac{1}{\\sum_{n=1}^\\infty n f_{jj}^{(n)}}$
 其中 $m_{jj} = E_j[T_j]$ 是状态 $j$ 的平均第一回访时间：
 - 若 $j$ 是正常返态，则 $m_{jj} < \\infty$，极限 $\\pi_j > 0$；
 - 若 $j$ 是零常返态，则 $m_{jj} = \\infty$，极限 $\\pi_j = 0$。`,
@@ -2183,7 +2261,7 @@ $$\\lim_{n \\to +\\infty} p_{ij}^{(n)} = \\pi_j = \\frac{1}{m_{jj}} = \\frac{1}{
     summary: "证明集合 $\\{m > 0 \\mid f_{jj}^{(m)} > 0\\}$ 与 $\\{n > 0 \\mid p_{jj}^{(n)} > 0\\}$ 的最大公约数完全相同！",
     intuitiveAnalogy: "任何一条回访路径，拆开看都只是一连串『第一次回访』的首尾拼接。因此全部回访步数的公因子，和首次回访步数的公因子必定同一源头。",
     mathStatement: `对任意状态 $j$，证明两个正整数集合：
-$$J_f = \\{m > 0 \\mid f_{jj}^{(m)} > 0\\} \\quad \\text{与} \\quad J_p = \\{n > 0 \\mid p_{jj}^{(n)} > 0\\}$$
+$J_f = \\{m > 0 \\mid f_{jj}^{(m)} > 0\\} \\quad \\text{与} \\quad J_p = \\{n > 0 \\mid p_{jj}^{(n)} > 0\\}$
 拥有完全相同的最大公约数 $d_j$。`,
     blueprint: "由 $f_{jj}^{(m)} \\le p_{jj}^{(m)}$ 得 $J_f \\subseteq J_p$ 得一边不等式；由路径拆解 $n = m_1 + \\dots + m_r$ 得反向整除。",
     microProof: [
@@ -2233,10 +2311,10 @@ $$J_f = \\{m > 0 \\mid f_{jj}^{(m)} > 0\\} \\quad \\text{与} \\quad J_p = \\{n 
     intuitiveAnalogy: "四季变换周期为4：你不能问『无穷远处的某一天是夏天还是冬天』（无法收敛），但如果你统计一生中夏天的总天数占全部天数的比例，这个平均值永远是精确的 1/4！",
     mathStatement: `若状态 $i$ 属于周期为 $d \\ge 2$ 的常返类 $C$：
 (1) 单子步沿周期倍数跳跃极限：
-$$\\lim_{n \\to +\\infty} p_{ii}^{(n d)} = \\frac{d}{m_{ii}} = d \\pi_i$$
+$\\lim_{n \\to +\\infty} p_{ii}^{(n d)} = \\frac{d}{m_{ii}} = d \\pi_i$
 （其余非整除步数 $p_{ii}^{(m)} = 0$）；
 (2) **时间平均 (Cesàro 平均) 极限恒成立**：
-$$\\lim_{n \\to +\\infty} \\frac{1}{n} \\sum_{k=1}^n p_{ii}^{(k)} = \\frac{1}{m_{ii}} = \\pi_i \\quad (\\forall i \\in C)$$`,
+$\\lim_{n \\to +\\infty} \\frac{1}{n} \\sum_{k=1}^n p_{ii}^{(k)} = \\frac{1}{m_{ii}} = \\pi_i \\quad (\\forall i \\in C)$`,
     blueprint: "将时间按 $n d$ 抽取子序列，应用定理 1.3.3 到跳步链 $Y_n = X_{nd}$，再通过求和平均将周期系数 $d$ 平滑抹平。",
     microProof: [
       {
@@ -2274,7 +2352,7 @@ $$\\lim_{n \\to +\\infty} \\frac{1}{n} \\sum_{k=1}^n p_{ii}^{(k)} = \\frac{1}{m_
     summary: "马尔科夫链的动力学不动点：一旦系统达到该概率分布，无论怎么随时间转移，宏观分布永恒不变！",
     intuitiveAnalogy: "各城市间的人口动态迁移平衡：虽然每天都有成千上万人坐火车在城市间奔波，但每个城市每天迁入的人数刚好等于迁出的人数，使得全省每个城市的人口总数始终保持恒定！",
     mathStatement: `概率向量 $\\pi = (\\pi_i)_{i \\in S}$ 称为马氏链 $P$ 的**平稳分布 (Stationary / Invariant Distribution)**，若满足：
-$$\\pi \\ge 0, \\quad \\sum_{i \\in S} \\pi_i = 1, \\quad \\text{且 } \\pi = \\pi P$$
+$\\pi \\ge 0, \\quad \\sum_{i \\in S} \\pi_i = 1, \\quad \\text{且 } \\pi = \\pi P$
 展开即对每个状态 $j$：$\\pi_j = \\sum_{i \\in S} \\pi_i p_{ij}$。
 若初始分布取为平稳分布 $P_{X_0} = \\pi$，则对所有未来时刻 $n \\ge 1$ 均有 $P_{X_n} = \\pi$（各时刻同分布）。`,
     blueprint: "作为概率测度转移算子 $T(\\mu) = \\mu P$ 的代数不动点定义。",
@@ -2366,7 +2444,7 @@ $$\\pi \\ge 0, \\quad \\sum_{i \\in S} \\pi_i = 1, \\quad \\text{且 } \\pi = \\
     intuitiveAnalogy: "一个周期为 3 的红绿灯系统：红灯区全部跳向黄灯区，黄灯区全部跳向绿灯区，绿灯区全部跳回红灯区。粒子绝不可能越级或者留在原地，只能严格按顺序在 $d$ 个子区域间循环转圈！",
     mathStatement: `设 $P$ 为不可约马氏矩阵，周期 $d \\ge 2$。则存在状态空间的唯一剖分 $S = C_0 \\cup C_1 \\cup \\dots \\cup C_{d-1}$ 使得：
 (a) **确定性轮转转移**：
-$$P\\{X_{n+1} \\in C_r \\mid X_n \\in C_{r-1}\\} = 1 \\quad (1 \\le r \\le d, \\text{ 约定 } C_d = C_0)$$
+$P\\{X_{n+1} \\in C_r \\mid X_n \\in C_{r-1}\\} = 1 \\quad (1 \\le r \\le d, \\text{ 约定 } C_d = C_0)$
 即：$C_0 \\to C_1 \\to \\dots \\to C_{d-1} \\to C_0$；
 (b) 对任意 $j, k \\in C_r$，充分大 $n$ 时 $p_{jk}^{(nd)} > 0$，且若 $d \\nmid m$ 则 $p_{jk}^{(m)} = 0$。
 （结论：每个子类 $C_r$ 都是 $d$ 步跳跃链 $Y_n = X_{nd}$ 的**非周期不可约类**）。`,
@@ -2521,7 +2599,7 @@ $$P\\{X_{n+1} \\in C_r \\mid X_n \\in C_{r-1}\\} = 1 \\quad (1 \\le r \\le d, \\
     mathStatement: `设 $X$ 为任意马氏链，转移矩阵为 $P$：
 (1) 若 $j$ 是非常返态，则对任意起点 $i \\in S$：$\\lim_{n \\to \\infty} p_{ij}^{(n)} = 0$；
 (2) 若 $j$ 是常返态且周期为 $d = d_j$，则对任意起点 $i \\in S$ 及整数 $0 \\le r < d$：
-$$\\lim_{n \\to +\\infty} p_{ij}^{(nd + r)} = \\frac{d}{m_{jj}} \\sum_{m=0}^\\infty f_{ij}^{(md + r)}$$
+$\\lim_{n \\to +\\infty} p_{ij}^{(nd + r)} = \\frac{d}{m_{jj}} \\sum_{m=0}^\\infty f_{ij}^{(md + r)}$
 特别地，若 $i, j$ 互通且同属一个常返类，则只有与同余类匹配的 $r$ 才有非零极限，极限为 $d / m_{jj}$。`,
     blueprint: "将步数分解为模 $d$ 的余数切片，结合首次击中卷积展开与定理 1.3.3 完成极限合并。",
     microProof: [
@@ -2561,9 +2639,9 @@ $$\\lim_{n \\to +\\infty} p_{ij}^{(nd + r)} = \\frac{d}{m_{jj}} \\sum_{m=0}^\\in
     intuitiveAnalogy: "你在一个遥远的孤岛（$i$），远方有一座繁华大都市（$j$）。你在大都市度过的长期时间比例是多少？等于：『你这辈子能渡海到达这座都市的概率』，乘以『这座都市自身的黄金时间占比 $\\pi_j$』！两件事链式相乘！",
     mathStatement: `设 $i, j$ 为任意两状态：
 (1) **Cesàro 时间平均极限 (对所有周期均成立)**：
-$$\\lim_{n \\to +\\infty} \\frac{1}{n} \\sum_{m=1}^n p_{ij}^{(m)} = f_{ij}^* \\pi_j = \\frac{f_{ij}^*}{m_{jj}}$$
+$\\lim_{n \\to +\\infty} \\frac{1}{n} \\sum_{m=1}^n p_{ij}^{(m)} = f_{ij}^* \\pi_j = \\frac{f_{ij}^*}{m_{jj}}$
 (2) **非周期情形的单点极限**（若 $j$ 是非周期的）：
-$$\\lim_{n \\to +\\infty} p_{ij}^{(n)} = f_{ij}^* \\pi_j = \\frac{f_{ij}^*}{m_{jj}}$$`,
+$\\lim_{n \\to +\\infty} p_{ij}^{(n)} = f_{ij}^* \\pi_j = \\frac{f_{ij}^*}{m_{jj}}$`,
     blueprint: "利用柯尔莫哥洛夫一般极限定理对所有同余余数 $r=0, \\dots, d-1$ 求和平均，结合级数和 $\\sum_r \\sum_m f_{ij}^{(md+r)} = f_{ij}^*$。",
     microProof: [
       {
@@ -2602,7 +2680,7 @@ $$\\lim_{n \\to +\\infty} p_{ij}^{(n)} = f_{ij}^* \\pi_j = \\frac{f_{ij}^*}{m_{j
     intuitiveAnalogy: "质点被一堵带弹簧的墙壁挡在左边（0号反射壁）：若向左吹风（$p < 1/2$），质点被风压向墙角，紧贴着墙角附近跳动（正常返）；若无风（$p = 1/2$），质点漫无边际地向右游荡，平均需要无穷久才能弹回来一次（零常返）；若向右吹狂风（$p > 1/2$），质点乘风破浪彻底离开，一去不回（非常返）。",
     mathStatement: `在 $\\mathbb{Z}_+$ 上的游走，转移矩阵在 $0$ 处为反射态：$p_{01}=1$；对 $i \\ge 1$，$p_{i, i+1}=p, p_{i, i-1}=q=1-p$。周期 $d = 2$。
 求解平稳方程 $\\pi = \\pi P$ 得到分量递推：
-$$\\pi_n = \\pi_0 \\prod_{k=0}^{n-1} \\frac{p_k}{q_{k+1}} = \\frac{\\pi_0}{q} \\left( \\frac{p}{q} \\right)^{n-1} \\quad (n \\ge 1)$$
+$\\pi_n = \\pi_0 \\prod_{k=0}^{n-1} \\frac{p_k}{q_{k+1}} = \\frac{\\pi_0}{q} \\left( \\frac{p}{q} \\right)^{n-1} \\quad (n \\ge 1)$
 由归一化条件 $\\sum_{n=0}^\\infty \\pi_n = 1$，求和级数 $\\sum (p/q)^n$ 仅当 $p < q$（即 $p < 1/2$）时收敛！
 **结论**：
 - $p < 1/2$：正常返 (Positive Recurrent)；
@@ -2650,7 +2728,7 @@ $$\\pi_n = \\pi_0 \\prod_{k=0}^{n-1} \\frac{p_k}{q_{k+1}} = \\frac{\\pi_0}{q} \\
 ];
 
 </script>
-<script>
+  <script>
 // Section 1.4: 吸收概率 (pp. 63 - 66)
 window.SECTION_1_4 = [
   {
@@ -2663,9 +2741,9 @@ window.SECTION_1_4 = [
     summary: "粒子在瞬时状态区域内挣扎：要么最终被某个常返类永久捕获（吸收），要么在瞬时区游荡至死。",
     intuitiveAnalogy: "流沙陷阱：$S_{tr}$ 就像流沙区域，周围有几个安全岛（常返类）。你在流沙里挣扎第 $n$ 步还没掉进安全岛的概率是 $x_i^{(n)}$。这个概率随着时间单调递减，极限 $x_i$ 就是你『永生游荡于流沙、永远不被吸收』的悲壮概率。",
     mathStatement: `设 $S_{tr}$ 为全体非常返状态的集合。对 $i \\in S_{tr}$，定义粒子连续 $n$ 步未被任何常返类吸收的**生存概率**：
-$$x_i^{(n)} = P\\{X_n \\in S_{tr}, \\dots, X_1 \\in S_{tr} \\mid X_0 = i\\} = \\sum_{j \\in S_{tr}} p_{ij} x_j^{(n-1)} \\quad (n \\ge 1)$$
+$x_i^{(n)} = P\\{X_n \\in S_{tr}, \\dots, X_1 \\in S_{tr} \\mid X_0 = i\\} = \\sum_{j \\in S_{tr}} p_{ij} x_j^{(n-1)} \\quad (n \\ge 1)$
 由于 $0 \\le x_i^{(n)} \\le 1$ 关于 $n$ 单调递减，由 Lebesgue 控制收敛定理，极限 $x_i = \\lim_{n \\to \\infty} x_i^{(n)}$ 存在且满足**齐次调和方程**：
-$$x_i = \\sum_{j \\in S_{tr}} p_{ij} x_j \\quad (\\forall i \\in S_{tr}), \\quad \\text{即矩阵形式 } x = P_{S_{tr}} x$$
+$x_i = \\sum_{j \\in S_{tr}} p_{ij} x_j \\quad (\\forall i \\in S_{tr}), \\quad \\text{即矩阵形式 } x = P_{S_{tr}} x$
 若该方程的唯一有界非负解为零向量 $x = 0$，则表明从任意非常返态出发，**以概率 1 必定会被某个常返类吸收**！`,
     blueprint: "利用单调有界原理证明极限存在性，代入全概率递推式取极限得到矩阵方程。",
     microProof: [
@@ -2748,11 +2826,11 @@ $$x_i = \\sum_{j \\in S_{tr}} p_{ij} x_j \\quad (\\forall i \\in S_{tr}), \\quad
     summary: "利用『第一步全概率分析』建立吸收概率的联立线性方程组，是求解所有撞墙破产问题的通用解法。",
     intuitiveAnalogy: "你身处险境（$i$），想知道掉进安全区 $C$ 的概率有多大？看第一步：要么你运气爆棚一步直接踩进安全区（$\\pi_i^{(1)}$）；要么你一步踩到了其他险境 $j$，然后再从 $j$ 继续计算掉进安全区的概率。所有分支加权求和，列出联立方程！",
     mathStatement: `设 $C$ 为一个常返类。定义从瞬时态 $i \\in S_{tr}$ 出发最终被 $C$ 吸收的**吸收概率**：
-$$\\pi_i(C) = P\\{ \\exists n \\ge 1 \\text{ s.t. } X_n \\in C \\mid X_0 = i \\}$$
+$\\pi_i(C) = P\\{ \\exists n \\ge 1 \\text{ s.t. } X_n \\in C \\mid X_0 = i \\}$
 令 $\\pi_i^{(1)}(C) = \\sum_{j \\in C} p_{ij}$ 为一步直接掉入 $C$ 的概率，则向量 $\\pi(C) = (\\pi_i(C))_{i \\in S_{tr}}$ 满足非齐次线性方程组：
-$$\\pi_i(C) = \\pi_i^{(1)}(C) + \\sum_{j \\in S_{tr}} p_{ij} \\pi_j(C) \\quad (\\forall i \\in S_{tr})$$
+$\\pi_i(C) = \\pi_i^{(1)}(C) + \\sum_{j \\in S_{tr}} p_{ij} \\pi_j(C) \\quad (\\forall i \\in S_{tr})$
 写为紧凑矩阵形式即：
-$$\\pi(C) = \\pi^{(1)}(C) + P_{S_{tr}} \\pi(C)$$`,
+$\\pi(C) = \\pi^{(1)}(C) + P_{S_{tr}} \\pi(C)$`,
     blueprint: "按第一步转移的所有可能去向划分：要么去常返类 $C$，要么留在瞬时态集合 $S_{tr}$，应用全概率公式展开。",
     microProof: [
       {
@@ -2796,9 +2874,9 @@ $$\\pi(C) = \\pi^{(1)}(C) + P_{S_{tr}} \\pi(C)$$`,
     summary: "从瞬时态 $i$ 走到常返态 $j$ 的长期概率，精确等于『被它所在的常返家族吸收的概率 $\\pi_i(C)$』乘上『$j$ 在该家族内部的稳态份额 $\\pi_j$』！",
     intuitiveAnalogy: "想知道你这个外乡人（$i$）未来长期留在某家茶馆（$j$）的概率？看两步：第一，你有多大几率搬家到这家茶馆所在的繁华城市（吸收概率 $\\pi_i(C)$）；第二，该城市的居民平时泡这家茶馆的平均时间比例（稳态概率 $\\pi_j$）。二者相乘即是全部！",
     mathStatement: `设 $C = C(j)$ 为常返互通类，$i \\in S_{tr}$ 为瞬时态。则：
-$$\\lim_{n \\to +\\infty} \\frac{1}{n} \\sum_{m=1}^n p_{ij}^{(m)} = \\pi_i(C) \\cdot \\pi_j = f_{ij}^* \\cdot \\pi_j$$
+$\\lim_{n \\to +\\infty} \\frac{1}{n} \\sum_{m=1}^n p_{ij}^{(m)} = \\pi_i(C) \\cdot \\pi_j = f_{ij}^* \\cdot \\pi_j$
 特别地，若常返类 $C$ 是非周期的，则单步转移极限存在且恒等于：
-$$\\lim_{n \\to +\\infty} p_{ij}^{(n)} = \\pi_i(C) \\cdot \\pi_j$$`,
+$\\lim_{n \\to +\\infty} p_{ij}^{(n)} = \\pi_i(C) \\cdot \\pi_j$`,
     blueprint: "按首次进入常返类 $C$ 时的入口状态 $k \\in C$ 与时刻 $\\ell$ 进行全概率展开，利用控制收敛与定理 1.3.3 / 命题 1.3.13 证明极限。",
     microProof: [
       {
@@ -2848,7 +2926,7 @@ $$\\lim_{n \\to +\\infty} p_{ij}^{(n)} = \\pi_i(C) \\cdot \\pi_j$$`,
     summary: "只要常返类是正常返的，击中该类中任意单个状态的累积概率，恒等于被该类吸收的总概率！",
     intuitiveAnalogy: "进了这个村，就是这个村的人。只要你被这个大家族捕获了（吸收），在无穷的时光里你必然会把村里的每一个老乡家里都坐一遍（$f_{ij}^* = \\pi_i(C)$）！",
     mathStatement: `设 $C = C(j)$ 是正常返互通类，$i \\in S_{tr}$。证明：
-$$f_{ij}^* = \\pi_i(C)$$`,
+$f_{ij}^* = \\pi_i(C)$`,
     blueprint: "对比命题 1.3.13 的极限式 $\\lim \\frac{1}{n} \\sum p_{ij}^{(m)} = f_{ij}^* \\pi_j$ 与定理 1.4.2 的极限式 $\\pi_i(C) \\pi_j$，两边约去 $\\pi_j > 0$ 秒杀！",
     microProof: [
       {
@@ -2893,9 +2971,9 @@ $$f_{ij}^* = \\pi_i(C)$$`,
     intuitiveAnalogy: "赌徒初始资本 $i$ 元，目标赢到 $n$ 元离场，输到 0 元破产。每轮赢率 $p$、输率 $q$。用常系数差分方程把中间所有转移链条联立，算出破产概率的闭式解。",
     mathStatement: `状态空间 $S = \\{0, 1, \\dots, n\\}$，其中 $0$ 和 $n$ 为吸收壁（常返类），$S_{tr} = \\{1, \\dots, n-1\\}$。
 设破产概率 $u_i = \\pi_i(\\{0\\})$ 满足第二阶差分方程：
-$$u_i = q u_{i-1} + p u_{i+1} \\quad (1 \\le i \\le n-1), \\quad u_0 = 1, \\ u_n = 0$$
+$u_i = q u_{i-1} + p u_{i+1} \\quad (1 \\le i \\le n-1), \\quad u_0 = 1, \\ u_n = 0$
 **通解公式**：
-$$u_i = \\begin{cases} \\frac{(q/p)^n - (q/p)^i}{(q/p)^n - 1} & \\text{若 } p \\ne q \\\\ 1 - \\frac{i}{n} & \\text{若 } p = q = \\frac{1}{2} \\end{cases}$$
+$u_i = \\begin{cases} \\frac{(q/p)^n - (q/p)^i}{(q/p)^n - 1} & \\text{若 } p \\ne q \\\\ 1 - \\frac{i}{n} & \\text{若 } p = q = \\frac{1}{2} \\end{cases}$
 赢得全部本金离场的概率为 $v_i = \\pi_i(\\{n\\}) = 1 - u_i$。`,
     blueprint: "利用第一步全概率法列出差分方程，通过特征多项式求通解，代入边界条件 $u_0=1, u_n=0$ 确定待定系数。",
     microProof: [
@@ -2958,9 +3036,9 @@ $$u_i = \\begin{cases} \\frac{(q/p)^n - (q/p)^i}{(q/p)^n - 1} & \\text{若 } p \
     summary: "和无限财富的对手赌博：哪怕规则完全公平，你也注定以 100% 的概率破产！",
     intuitiveAnalogy: "普通散户跟拥有无限筹码的做市商单挑：做市商输得起无穷多轮，而散户只要中间有一瞬间运气不济资金归零，就会立即离场被吸收。因此在公平与劣势规则下，最终破产概率恒为 1！",
     mathStatement: `设赌徒在 $S = \\mathbb{Z}_+$ 玩游戏，状态 0 为破产吸收态，对手拥有无限财富（无右边界 $n$）：
-$$u_i = \\begin{cases} 1 & \\text{若 } q \\ge p \\ (\\text{即 } q \\ge 1/2) \\\\ \\left( \\frac{q}{p} \\right)^i & \\text{若 } q < p \\ (\\text{即 } p > 1/2) \\end{cases}$$
+$u_i = \\begin{cases} 1 & \\text{若 } q \\ge p \\ (\\text{即 } q \\ge 1/2) \\\\ \\left( \\frac{q}{p} \\right)^i & \\text{若 } q < p \\ (\\text{即 } p > 1/2) \\end{cases}$
 在占优赌局 $p > 1/2$ 中，若赌徒希望自己的破产风险控制在 $1/2$ 以下（$u_i < 1/2$），其初始本金必须跨过**安全红线**：
-$$i > \\frac{\\ln 2}{\\ln p - \\ln q}$$`,
+$i > \\frac{\\ln 2}{\\ln p - \\ln q}$`,
     blueprint: "令有限赌徒公式中的右边界 $n \\to \\infty$，利用有界解与 $u_0=1$ 的极限性质完成定解。",
     microProof: [
       {
@@ -3003,7 +3081,7 @@ $$i > \\frac{\\ln 2}{\\ln p - \\ln q}$$`,
 ];
 
 </script>
-<script>
+  <script>
 // Section 1.5: 常返性与正常返性的实用判据 (pp. 66 - 76)
 window.SECTION_1_5 = [
   {
@@ -3074,7 +3152,7 @@ window.SECTION_1_5 = [
     intuitiveAnalogy: "寻找逃逸电压：如果在一个电路网格中，固定 0 号接地元为 1 伏特，你能在这个网格上建立一套处处满足基尔霍夫电流定律（调和方程）、且电位始终有界但各处不相等的平滑电压分布，就证明电荷有通路一路逃向无限远处！",
     mathStatement: `设 $P$ 为不可约马氏矩阵，$H \\subset \\mathbb{Z}_+$ 为**单点集**（不失一般性设 $H = \\{0\\}$）。
 则 $P$ 是**非常返的 (Nonrecurrent)**，充分必要条件是调和方程组：
-$$\\sum_{j=0}^\\infty p_{ij} y_j = y_i \\quad (\\forall i \\notin H)$$
+$\\sum_{j=0}^\\infty p_{ij} y_j = y_i \\quad (\\forall i \\notin H)$
 存在一个**有界、非负且非常数 (bounded, nonnegative, nonconstant)** 的解 $y = (y_i)_{i \\in \\mathbb{Z}_+}$。
 （注：若 $H$ 不是单点集，该定理不成立！反例见讲义第72页脚注20）。`,
     blueprint: "必要性：若链非常返，显式构造 $y_0=1, y_i = f_{i0}^*$，由引理 1.5.1 证明其必非常数；充分性：把 0 点强行改造成吸收壁 $\\tilde{X}$，利用 $\\tilde{P}^n y = y$ 和控制收敛定理反证若常返则必迫使 $y$ 退化为常数。",
@@ -3182,7 +3260,7 @@ $$\\sum_{j=0}^\\infty p_{ij} y_j = y_i \\quad (\\forall i \\notin H)$$
     intuitiveAnalogy: "碗状引力场：想象一个大瓷碗，碗底是原点 0，碗壁向外无限升高（$y_i \\to \\infty$）。在碗壁任意位置，粒子的平均下一步势能不高于当前势能（$\\sum p_{ij} y_j \\le y_i$ 超调和性），说明重力一直在把它往碗底拉拽，因此粒子绝不可能逃到碗外面去，必回原点（常返）！",
     mathStatement: `设 $P$ 为不可约马氏矩阵，$H \\subset \\mathbb{Z}_+$ 为非空有限子集。
 则 $P$ 是**常返的 (Recurrent)**，充分必要条件是存在正实数列 $y = (y_i)_{i \\in \\mathbb{Z}_+}$ 满足：
-$$\\sum_{j=0}^\\infty p_{ij} y_j \\le y_i \\quad (\\forall i \\notin H) \\quad \\text{且} \\quad \\lim_{i \\to +\\infty} y_i = +\\infty$$`,
+$\\sum_{j=0}^\\infty p_{ij} y_j \\le y_i \\quad (\\forall i \\notin H) \\quad \\text{且} \\quad \\lim_{i \\to +\\infty} y_i = +\\infty$`,
     blueprint: "充分性：取有界截断 $M$，将势能拆分为内部与尾部，用无穷远处 $y_r \\to \\infty$ 逼迫逃逸概率为 0；必要性：利用 $n$-级概率 $\\tilde{\eta}_i(n)$ 和对角线子序列挑选，通过 Fatou 引理构造出趋于无穷的超调和序列。",
     microProof: [
       {
@@ -3332,7 +3410,7 @@ $$\\sum_{j=0}^\\infty p_{ij} y_j \\le y_i \\quad (\\forall i \\notin H) \\quad \
     intuitiveAnalogy: "强力弹簧回拉：在常返判据中，只要不向外走（漂移 $\\le 0$）就能常返；但如果你想保证『有限时间必须回家』（正常返），就必须有强劲的吸力——每走一步，势能平均至少要往下掉 1 个单位（$\\Delta y \\le -1$）！这样从高度 $y_i$ 跌回原点的时间期望绝不会超过 $y_i$ 步！",
     mathStatement: `设 $P$ 为不可约、非周期的马氏矩阵，$H \\subset \\mathbb{Z}_+$ 为有限子集。
 则 $P$ 是**正常返的 (Positive Recurrent)**，充分必要条件是不等式组：
-$$\\begin{cases} \\sum_{j=0}^\\infty p_{ij} y_j \\le y_i - 1 & (\\forall i \\notin H) \\\\ \\sum_{i \\in H} \\sum_{j=0}^\\infty p_{ij} y_j < \\infty & \\end{cases}$$
+$\\begin{cases} \\sum_{j=0}^\\infty p_{ij} y_j \\le y_i - 1 & (\\forall i \\notin H) \\\\ \\sum_{i \\in H} \\sum_{j=0}^\\infty p_{ij} y_j < \\infty & \\end{cases}$
 存在一个**非负实数解** $y = (y_i)_{i \\in \\mathbb{Z}_+}$。`,
     blueprint: "利用 Dynkin 公式或停时可选停止定理，对势能做期望差分递推，得到 $E_i[T_H] \\le y_i < \\infty$，进而锁定平均回访时间有限。",
     microProof: [
@@ -3458,7 +3536,7 @@ $$\\begin{cases} \\sum_{j=0}^\\infty p_{ij} y_j \\le y_i - 1 & (\\forall i \\not
     mathStatement: `状态 $X_n$ 表示第 $n$ 时刻排队等待的顾客总数。在单位时间内恰好有 1 名顾客接受完服务离开。
 新到达的顾客数分布为 $P\\{\\xi = j\\} = a_j$，定义**服务强度** $\\lambda = E[\\xi] = \\sum_{j \\ge 0} j a_j$。
 转移矩阵为：
-$$P = \\begin{bmatrix} a_0 & a_1 & a_2 & a_3 & \\dots \\\\ a_0 & a_1 & a_2 & a_3 & \\dots \\\\ 0 & a_0 & a_1 & a_2 & \\dots \\\\ 0 & 0 & a_0 & a_1 & \\dots \\end{bmatrix}$$
+$P = \\begin{bmatrix} a_0 & a_1 & a_2 & a_3 & \\dots \\\\ a_0 & a_1 & a_2 & a_3 & \\dots \\\\ 0 & a_0 & a_1 & a_2 & \\dots \\\\ 0 & 0 & a_0 & a_1 & \\dots \\end{bmatrix}$
 **全景相变判决**：
 (1) 该链是不可约非周期的；
 (2) 若 $\\lambda > 1$，则 $P$ 是**非常返的**；
@@ -3576,7 +3654,7 @@ $$P = \\begin{bmatrix} a_0 & a_1 & a_2 & a_3 & \\dots \\\\ a_0 & a_1 & a_2 & a_3
 ];
 
 </script>
-<script>
+  <script>
 // Data Index & Topological Network Assembly
 (function() {
   const allSections = [
@@ -3662,8 +3740,8 @@ $$P = \\begin{bmatrix} a_0 & a_1 & a_2 & a_3 & \\dots \\\\ a_0 & a_1 & a_2 & a_3
 })();
 
 </script>
-<script>
-// Topological Knowledge Graph Engine (Canvas & Interactive Graph)
+  <script>
+// Topological Knowledge Graph Engine (High-Aesthetic Canvas with Neon Glow & Starfield Grid)
 class MarkovGraph {
   constructor(canvasId, containerId, onNodeSelect) {
     this.canvas = document.getElementById(canvasId);
@@ -3677,12 +3755,16 @@ class MarkovGraph {
     this.hoveredNodeId = null;
 
     // Viewport transform
-    this.scale = 1;
-    this.panX = 40;
+    this.scale = 0.88;
+    this.panX = 60;
     this.panY = 40;
     this.isDragging = false;
     this.dragStartX = 0;
     this.dragStartY = 0;
+
+    // Animation timer for pulsing halo
+    this.animTime = 0;
+    this.animFrame = null;
 
     // Filter settings
     this.activeSection = "all";
@@ -3698,19 +3780,28 @@ class MarkovGraph {
     this.bindEvents();
     this.loadData();
     this.layoutNodes();
-    this.render();
+    this.startAnimationLoop();
+  }
+
+  startAnimationLoop() {
+    const loop = () => {
+      this.animTime += 0.04;
+      this.render();
+      this.animFrame = requestAnimationFrame(loop);
+    };
+    this.animFrame = requestAnimationFrame(loop);
   }
 
   resize() {
     const rect = this.container.getBoundingClientRect();
-    this.width = rect.width || 1000;
-    this.height = rect.height || 650;
+    this.width = rect.width || 1100;
+    this.height = rect.height || 680;
     this.canvas.width = this.width * window.devicePixelRatio;
     this.canvas.height = this.height * window.devicePixelRatio;
     this.canvas.style.width = this.width + 'px';
     this.canvas.style.height = this.height + 'px';
+    this.ctx.setTransform(1, 0, 0, 1, 0, 0);
     this.ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-    this.render();
   }
 
   loadData() {
@@ -3720,9 +3811,7 @@ class MarkovGraph {
       ...n,
       x: 0,
       y: 0,
-      vx: 0,
-      vy: 0,
-      radius: n.type === 'theorem' ? 24 : (n.type === 'definition' ? 22 : 18)
+      radius: n.type === 'theorem' ? 26 : (n.type === 'definition' ? 24 : 20)
     }));
     this.edges = rawData.edges.map(e => ({ ...e }));
   }
@@ -3730,19 +3819,18 @@ class MarkovGraph {
   layoutNodes() {
     // Hierarchical section-column layout
     const sections = ["1.1", "1.2", "1.3", "1.4", "1.5"];
-    const sectionWidth = 280;
-    const startX = 140;
+    const sectionWidth = 300;
+    const startX = 160;
 
     sections.forEach((sec, colIdx) => {
       const secNodes = this.nodes.filter(n => n.section === sec);
       const totalInSec = secNodes.length;
-      const verticalGap = 72;
+      const verticalGap = 76;
       const totalHeight = totalInSec * verticalGap;
-      const startY = Math.max(100, (this.height - totalHeight) / 2 + 50);
+      const startY = Math.max(90, (this.height - totalHeight) / 2 + 40);
 
       secNodes.forEach((node, rowIdx) => {
-        // Stagger slightly for readability
-        const jitter = (rowIdx % 2 === 0 ? 0 : 25);
+        const jitter = (rowIdx % 2 === 0 ? 0 : 35);
         node.x = startX + colIdx * sectionWidth + jitter;
         node.y = startY + rowIdx * verticalGap;
       });
@@ -3773,19 +3861,16 @@ class MarkovGraph {
       if (this.isDragging) {
         this.panX = e.clientX - this.dragStartX;
         this.panY = e.clientY - this.dragStartY;
-        this.render();
       } else {
         const hit = this.hitTest(mouseX, mouseY);
         if (hit && hit.id !== this.hoveredNodeId) {
           this.hoveredNodeId = hit.id;
           this.canvas.style.cursor = 'pointer';
           this.showTooltip(hit, e.clientX, e.clientY);
-          this.render();
         } else if (!hit && this.hoveredNodeId) {
           this.hoveredNodeId = null;
           this.canvas.style.cursor = 'default';
           this.hideTooltip();
-          this.render();
         }
       }
     });
@@ -3796,8 +3881,8 @@ class MarkovGraph {
 
     this.canvas.addEventListener('wheel', (e) => {
       e.preventDefault();
-      const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
-      const newScale = Math.min(Math.max(this.scale * zoomFactor, 0.4), 2.5);
+      const zoomFactor = e.deltaY < 0 ? 1.08 : 0.92;
+      const newScale = Math.min(Math.max(this.scale * zoomFactor, 0.35), 2.8);
 
       const rect = this.canvas.getBoundingClientRect();
       const mouseX = e.clientX - rect.left;
@@ -3806,7 +3891,6 @@ class MarkovGraph {
       this.panX = mouseX - (mouseX - this.panX) * (newScale / this.scale);
       this.panY = mouseY - (mouseY - this.panY) * (newScale / this.scale);
       this.scale = newScale;
-      this.render();
     });
   }
 
@@ -3815,7 +3899,7 @@ class MarkovGraph {
       const n = this.nodes[i];
       if (!this.isNodeVisible(n)) continue;
       const dist = Math.hypot(n.x - x, n.y - y);
-      if (dist <= n.radius + 6) {
+      if (dist <= n.radius + 8) {
         return n;
       }
     }
@@ -3837,7 +3921,6 @@ class MarkovGraph {
 
   selectNode(nodeId) {
     this.selectedNodeId = nodeId;
-    this.render();
     if (this.onNodeSelect) {
       this.onNodeSelect(nodeId);
     }
@@ -3871,18 +3954,21 @@ class MarkovGraph {
     const ctx = this.ctx;
     ctx.clearRect(0, 0, this.width, this.height);
 
+    // 1. Draw subtle background coordinate dot-grid
+    this.drawBackgroundGrid(ctx);
+
     ctx.save();
     ctx.translate(this.panX, this.panY);
     ctx.scale(this.scale, this.scale);
 
-    // Section Columns Background Banners
+    // 2. Section Columns Background Glass Panels
     this.drawSectionBanners(ctx);
 
     // Get highlighted dependency sets
     const ancestors = this.selectedNodeId ? this.getAncestors(this.selectedNodeId) : new Set();
     const descendants = this.selectedNodeId ? this.getDescendants(this.selectedNodeId) : new Set();
 
-    // 1. Draw Edges
+    // 3. Draw Edges with Neon Glow
     this.edges.forEach(edge => {
       const src = this.nodes.find(n => n.id === edge.source);
       const tgt = this.nodes.find(n => n.id === edge.target);
@@ -3897,34 +3983,36 @@ class MarkovGraph {
         (ancestors.has(edge.source) && (edge.target === this.selectedNodeId || ancestors.has(edge.target)))
       );
 
+      ctx.save();
       ctx.beginPath();
       ctx.moveTo(src.x, src.y);
-      // Curved bezier curve
       const midX = (src.x + tgt.x) / 2;
       ctx.bezierCurveTo(midX, src.y, midX, tgt.y, tgt.x, tgt.y);
 
       if (isHighlighted) {
-        ctx.strokeStyle = edge.source === this.selectedNodeId || descendants.has(edge.target) ? "#10B981" : "#F59E0B";
-        ctx.lineWidth = 3;
+        const isDownstream = edge.source === this.selectedNodeId || descendants.has(edge.target);
+        ctx.strokeStyle = isDownstream ? "#10B981" : "#F59E0B";
+        ctx.lineWidth = 3.5;
+        ctx.shadowColor = isDownstream ? "rgba(16, 185, 129, 0.8)" : "rgba(245, 158, 11, 0.8)";
+        ctx.shadowBlur = 12;
         ctx.setLineDash([]);
-      } else if (this.selectedNodeId) {
-        ctx.strokeStyle = "rgba(156, 163, 175, 0.15)";
-        ctx.lineWidth = 1;
-        ctx.setLineDash([4, 4]);
-      } else {
-        ctx.strokeStyle = "rgba(156, 163, 175, 0.35)";
-        ctx.lineWidth = 1.5;
-        ctx.setLineDash([]);
-      }
-      ctx.stroke();
+        ctx.stroke();
 
-      // Arrow head for highlighted lines
-      if (isHighlighted) {
         this.drawArrowHead(ctx, midX, (src.y + tgt.y) / 2, tgt.x, tgt.y, ctx.strokeStyle);
+      } else if (this.selectedNodeId) {
+        ctx.strokeStyle = "rgba(100, 116, 139, 0.12)";
+        ctx.lineWidth = 1;
+        ctx.setLineDash([3, 4]);
+        ctx.stroke();
+      } else {
+        ctx.strokeStyle = "rgba(148, 163, 184, 0.28)";
+        ctx.lineWidth = 1.6;
+        ctx.stroke();
       }
+      ctx.restore();
     });
 
-    // 2. Draw Nodes
+    // 4. Draw Nodes with Quantum Pulse Effect
     this.nodes.forEach(node => {
       const isVisible = this.isNodeVisible(node);
       const isSelected = node.id === this.selectedNodeId;
@@ -3941,50 +4029,70 @@ class MarkovGraph {
       }
       ctx.globalAlpha = alpha;
 
-      // Outer glow for selected or hovered
-      if (isSelected || isHovered) {
+      // Pulsing Neon Halo for Active Selection
+      if (isSelected) {
+        const pulse = 8 + Math.sin(this.animTime * 3) * 4;
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, node.radius + pulse, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(59, 130, 246, 0.3)";
+        ctx.shadowColor = "#3B82F6";
+        ctx.shadowBlur = 18;
+        ctx.fill();
+      } else if (isHovered) {
         ctx.beginPath();
         ctx.arc(node.x, node.y, node.radius + 8, 0, Math.PI * 2);
-        ctx.fillStyle = isSelected ? "rgba(59, 130, 246, 0.35)" : "rgba(245, 158, 11, 0.3)";
+        ctx.fillStyle = "rgba(245, 158, 11, 0.25)";
+        ctx.shadowColor = "#F59E0B";
+        ctx.shadowBlur = 14;
         ctx.fill();
       } else if (isAncestor) {
         ctx.beginPath();
         ctx.arc(node.x, node.y, node.radius + 6, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(245, 158, 11, 0.25)";
+        ctx.fillStyle = "rgba(245, 158, 11, 0.2)";
         ctx.fill();
       } else if (isDescendant) {
         ctx.beginPath();
         ctx.arc(node.x, node.y, node.radius + 6, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(16, 185, 129, 0.25)";
+        ctx.fillStyle = "rgba(16, 185, 129, 0.2)";
         ctx.fill();
       }
 
-      // Main Node Circle
+      // Outer Ring
       ctx.beginPath();
-      ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
-      ctx.fillStyle = node.color;
-      ctx.fill();
-      ctx.lineWidth = isSelected ? 3.5 : 2;
-      ctx.strokeStyle = isSelected ? "#FFFFFF" : "rgba(255, 255, 255, 0.8)";
+      ctx.arc(node.x, node.y, node.radius + 2, 0, Math.PI * 2);
+      ctx.strokeStyle = isSelected ? "#60A5FA" : (isAncestor ? "#FBBF24" : (isDescendant ? "#34D399" : "rgba(255, 255, 255, 0.15)"));
+      ctx.lineWidth = isSelected ? 2.5 : 1.2;
       ctx.stroke();
 
-      // Node Icon / Type Symbol
+      // Main Node Circle with Radial Gradient
+      const grad = ctx.createRadialGradient(node.x - 4, node.y - 4, 2, node.x, node.y, node.radius);
+      grad.addColorStop(0, '#FFFFFF');
+      grad.addColorStop(0.3, node.color);
+      grad.addColorStop(1, this.darkenColor(node.color, 0.3));
+
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
+      ctx.fillStyle = grad;
+      ctx.fill();
+
+      // Node Icon
       ctx.fillStyle = "#FFFFFF";
-      ctx.font = `${node.radius * 0.85}px sans-serif`;
+      ctx.font = `bold ${node.radius * 0.85}px sans-serif`;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.fillText(node.icon, node.x, node.y);
+      ctx.fillText(node.icon, node.x, node.y + 1);
 
-      // Node Title Label below
-      ctx.fillStyle = isSelected ? "#3B82F6" : (isAncestor ? "#D97706" : (isDescendant ? "#059669" : "#374151"));
+      // Node Label (Glowing and crisp)
       ctx.font = isSelected ? "bold 12px sans-serif" : "11px sans-serif";
       ctx.textAlign = "center";
       ctx.textBaseline = "top";
+      ctx.fillStyle = isSelected ? "#93C5FD" : (isAncestor ? "#FDE68A" : (isDescendant ? "#A7F3D0" : "#E2E8F0"));
+      ctx.shadowColor = "rgba(0,0,0,0.8)";
+      ctx.shadowBlur = 4;
 
-      // Truncate long title
       let shortTitle = node.title.split(":")[0];
       if (shortTitle.length > 18) shortTitle = shortTitle.slice(0, 16) + "..";
-      ctx.fillText(shortTitle, node.x, node.y + node.radius + 5);
+      ctx.fillText(shortTitle, node.x, node.y + node.radius + 7);
 
       ctx.restore();
     });
@@ -3992,40 +4100,60 @@ class MarkovGraph {
     ctx.restore();
   }
 
+  drawBackgroundGrid(ctx) {
+    const spacing = 32;
+    ctx.save();
+    ctx.fillStyle = "rgba(255, 255, 255, 0.04)";
+    for (let x = 0; x < this.width; x += spacing) {
+      for (let y = 0; y < this.height; y += spacing) {
+        ctx.fillRect(x, y, 1.2, 1.2);
+      }
+    }
+    ctx.restore();
+  }
+
   drawSectionBanners(ctx) {
     const sections = [
-      { id: "1.1", title: "§1.1 基础概念与分类", color: "rgba(59, 130, 246, 0.06)", border: "rgba(59, 130, 246, 0.2)" },
-      { id: "1.2", title: "§1.2 常返与非常返", color: "rgba(16, 185, 129, 0.06)", border: "rgba(16, 185, 129, 0.2)" },
-      { id: "1.3", title: "§1.3 正常返与极限定理", color: "rgba(139, 92, 246, 0.06)", border: "rgba(139, 92, 246, 0.2)" },
-      { id: "1.4", title: "§1.4 吸收概率与赌徒破产", color: "rgba(245, 158, 11, 0.06)", border: "rgba(245, 158, 11, 0.2)" },
-      { id: "1.5", title: "§1.5 实用判据与排队论", color: "rgba(236, 72, 153, 0.06)", border: "rgba(236, 72, 153, 0.2)" }
+      { id: "1.1", title: "§1.1 基础概念与分类", color: "rgba(59, 130, 246, 0.04)", border: "rgba(59, 130, 246, 0.2)" },
+      { id: "1.2", title: "§1.2 常返与非常返", color: "rgba(16, 185, 129, 0.04)", border: "rgba(16, 185, 129, 0.2)" },
+      { id: "1.3", title: "§1.3 正常返与极限定理", color: "rgba(139, 92, 246, 0.04)", border: "rgba(139, 92, 246, 0.2)" },
+      { id: "1.4", title: "§1.4 吸收概率与破产", color: "rgba(245, 158, 11, 0.04)", border: "rgba(245, 158, 11, 0.2)" },
+      { id: "1.5", title: "§1.5 实用判据与排队论", color: "rgba(236, 72, 153, 0.04)", border: "rgba(236, 72, 153, 0.2)" }
     ];
 
-    const sectionWidth = 280;
-    const startX = 140;
+    const sectionWidth = 300;
+    const startX = 160;
 
     sections.forEach((sec, idx) => {
-      const left = startX + idx * sectionWidth - 120;
+      const left = startX + idx * sectionWidth - 130;
       const top = 30;
-      const colWidth = sectionWidth - 20;
-      const colHeight = 650;
+      const colWidth = sectionWidth - 24;
+      const colHeight = 720;
 
       ctx.fillStyle = sec.color;
       ctx.strokeStyle = sec.border;
       ctx.lineWidth = 1;
-      this.roundRect(ctx, left, top, colWidth, colHeight, 12, true, true);
+      this.roundRect(ctx, left, top, colWidth, colHeight, 14, true, true);
 
       // Section Header Tag
-      ctx.fillStyle = "#4B5563";
+      ctx.fillStyle = "#94A3B8";
       ctx.font = "bold 13px sans-serif";
       ctx.textAlign = "left";
       ctx.textBaseline = "top";
-      ctx.fillText(sec.title, left + 15, top + 15);
+      ctx.fillText(sec.title, left + 16, top + 16);
     });
   }
 
+  darkenColor(hex, amount) {
+    let num = parseInt(hex.replace("#", ""), 16);
+    let r = Math.max(0, (num >> 16) - Math.round(255 * amount));
+    let g = Math.max(0, ((num >> 8) & 0x00FF) - Math.round(255 * amount));
+    let b = Math.max(0, (num & 0x0000FF) - Math.round(255 * amount));
+    return `rgb(${r}, ${g}, ${b})`;
+  }
+
   drawArrowHead(ctx, fromX, fromY, toX, toY, color) {
-    const headLen = 10;
+    const headLen = 11;
     const angle = Math.atan2(toY - fromY, toX - fromX);
     ctx.save();
     ctx.fillStyle = color;
@@ -4059,22 +4187,25 @@ class MarkovGraph {
     if (!tooltip) {
       tooltip = document.createElement('div');
       tooltip.id = 'graph-tooltip';
-      tooltip.className = 'fixed z-50 pointer-events-none bg-gray-900 text-white p-3 rounded-lg shadow-xl text-xs max-w-xs transition-opacity duration-150';
+      tooltip.className = 'fixed z-50 pointer-events-none bg-slate-900/95 backdrop-blur-md text-white p-3.5 rounded-xl shadow-2xl border border-slate-700/60 text-xs max-w-sm transition-opacity duration-150';
       document.body.appendChild(tooltip);
     }
 
     tooltip.innerHTML = `
-      <div class="flex items-center space-x-1.5 mb-1">
-        <span class="text-sm">${node.icon}</span>
-        <span class="font-bold text-blue-300">${node.badge || node.type}</span>
-        <span class="text-gray-400">§${node.section}</span>
+      <div class="flex items-center space-x-2 mb-1.5">
+        <span class="text-base">${node.icon}</span>
+        <span class="font-bold text-sky-400">${node.badge || node.type}</span>
+        <span class="text-slate-400 text-[11px]">§${node.section}</span>
       </div>
-      <div class="font-semibold text-gray-100 text-sm mb-1">${node.title}</div>
-      <div class="text-gray-300 leading-snug">${node.summary}</div>
-      <div class="mt-2 text-blue-400 font-mono text-[10px]">👆 点击卡片进入显微镜逐行拆解</div>
+      <div class="font-bold text-slate-100 text-sm mb-1 leading-snug">${node.title}</div>
+      <div class="text-slate-300 text-xs leading-relaxed">${node.summary}</div>
+      <div class="mt-2.5 pt-2 border-t border-slate-800 text-sky-400 font-mono text-[10px] flex items-center justify-between">
+        <span>👆 点击卡片进入显微镜逐行拆解</span>
+        <span>${node.dependencies.length} 前置 / ${node.unlocks.length} 引申</span>
+      </div>
     `;
 
-    tooltip.style.left = `${screenX + 15}px`;
+    tooltip.style.left = `${screenX + 18}px`;
     tooltip.style.top = `${screenY + 15}px`;
     tooltip.style.opacity = '1';
   }
@@ -4086,58 +4217,52 @@ class MarkovGraph {
     }
   }
 
-  // API methods for external toolbar
   setSectionFilter(sec) {
     this.activeSection = sec;
-    this.render();
   }
 
   setTypeFilter(type) {
     this.activeType = type;
-    this.render();
   }
 
   setSearch(q) {
     this.searchQuery = q;
-    this.render();
   }
 
   zoomIn() {
-    this.scale = Math.min(this.scale * 1.2, 2.5);
-    this.render();
+    this.scale = Math.min(this.scale * 1.2, 2.8);
   }
 
   zoomOut() {
-    this.scale = Math.max(this.scale * 0.8, 0.4);
-    this.render();
+    this.scale = Math.max(this.scale * 0.8, 0.35);
   }
 
   resetView() {
-    this.scale = 1;
-    this.panX = 40;
+    this.scale = 0.88;
+    this.panX = 60;
     this.panY = 40;
-    this.render();
   }
 }
 
 window.MarkovGraph = MarkovGraph;
 
 </script>
-<script>
-// Dynamic Simulation Sandboxes (Canvas Monte Carlo Engines)
+  <script>
+// High-Aesthetic Dynamic Simulation Sandboxes (Neon Canvas Monte Carlo Engines)
 window.MarkovSimulations = {
   // 1. Pólya Random Walk Sandbox (1D / 2D / 3D)
   polyWalk: {
     canvas: null,
     ctx: null,
-    dimension: 1, // 1, 2, or 3
-    p: 0.5, // forward prob for 1D
+    dimension: 1,
+    p: 0.5,
     steps: 0,
     returns: 0,
     trajectory: [],
     timer: null,
     isRunning: false,
-    speed: 30, // ms per tick
+    speed: 30,
+    rotAngle: 0.5, // 3D camera rotation angle
 
     init(canvasId) {
       this.canvas = document.getElementById(canvasId);
@@ -4174,7 +4299,7 @@ window.MarkovSimulations = {
     start() {
       if (this.isRunning) return;
       this.isRunning = true;
-      this.timer = setInterval(() => this.step(5), this.speed);
+      this.timer = setInterval(() => this.step(4), this.speed);
     },
 
     stop() {
@@ -4195,7 +4320,7 @@ window.MarkovSimulations = {
           const nextX = last.x + move;
           if (nextX === 0) this.returns++;
           this.trajectory.push({ x: nextX, t: this.steps });
-          if (this.trajectory.length > 500) this.trajectory.shift();
+          if (this.trajectory.length > 350) this.trajectory.shift();
         } else if (this.dimension === 2) {
           const rand = Math.random();
           let dx = 0, dy = 0;
@@ -4206,7 +4331,7 @@ window.MarkovSimulations = {
           const next = { x: last.x + dx, y: last.y + dy };
           if (next.x === 0 && next.y === 0) this.returns++;
           this.trajectory.push(next);
-          if (this.trajectory.length > 800) this.trajectory.shift();
+          if (this.trajectory.length > 500) this.trajectory.shift();
         } else {
           // 3D
           const rand = Math.random();
@@ -4220,7 +4345,8 @@ window.MarkovSimulations = {
           const next = { x: last.x + dx, y: last.y + dy, z: last.z + dz };
           if (next.x === 0 && next.y === 0 && next.z === 0) this.returns++;
           this.trajectory.push(next);
-          if (this.trajectory.length > 800) this.trajectory.shift();
+          if (this.trajectory.length > 500) this.trajectory.shift();
+          this.rotAngle += 0.005; // slowly rotate 3D camera
         }
       }
       this.updateStats();
@@ -4248,135 +4374,217 @@ window.MarkovSimulations = {
       const ctx = this.ctx;
       const w = this.canvas.width;
       const h = this.canvas.height;
-      ctx.clearRect(0, 0, w, h);
+
+      // Dark Sci-Fi background
+      ctx.fillStyle = '#090d16';
+      ctx.fillRect(0, 0, w, h);
 
       if (this.dimension === 1) {
-        // 1D Time-Trajectory view
-        ctx.strokeStyle = '#E5E7EB';
-        ctx.lineWidth = 1;
+        // 1D Time-Trajectory view with glowing neon line
+        const midY = h / 2;
+
+        // Zero line
+        ctx.strokeStyle = 'rgba(239, 68, 68, 0.4)';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([4, 4]);
         ctx.beginPath();
-        ctx.moveTo(0, h / 2);
-        ctx.lineTo(w, h / 2);
+        ctx.moveTo(0, midY); ctx.lineTo(w, midY);
         ctx.stroke();
+        ctx.setLineDash([]);
 
-        ctx.strokeStyle = '#3B82F6';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        const startT = this.trajectory[0].t;
-        const endT = this.trajectory[this.trajectory.length - 1].t || 1;
-        const spanT = Math.max(endT - startT, 50);
+        ctx.fillStyle = '#EF4444';
+        ctx.font = '10px sans-serif';
+        ctx.fillText('原点 0', 12, midY - 6);
 
-        this.trajectory.forEach((pt, i) => {
-          const px = ((pt.t - startT) / spanT) * (w - 40) + 20;
-          const py = h / 2 - pt.x * 6;
-          if (i === 0) ctx.moveTo(px, py);
-          else ctx.lineTo(px, py);
-        });
-        ctx.stroke();
+        if (this.trajectory.length > 1) {
+          const startT = this.trajectory[0].t;
+          const endT = this.trajectory[this.trajectory.length - 1].t || 1;
+          const spanT = Math.max(endT - startT, 50);
 
-        // Origin label
-        ctx.fillStyle = '#9CA3AF';
-        ctx.font = '11px sans-serif';
-        ctx.fillText('原点 0', 10, h / 2 - 5);
+          // Gradient fill under trajectory
+          const grad = ctx.createLinearGradient(0, 0, 0, h);
+          grad.addColorStop(0, 'rgba(6, 182, 212, 0.25)');
+          grad.addColorStop(0.5, 'rgba(6, 182, 212, 0.02)');
+          grad.addColorStop(1, 'rgba(6, 182, 212, 0.25)');
+
+          ctx.beginPath();
+          ctx.moveTo(20, midY);
+          this.trajectory.forEach((pt) => {
+            const px = ((pt.t - startT) / spanT) * (w - 40) + 20;
+            const py = midY - pt.x * 6;
+            ctx.lineTo(px, py);
+          });
+          const lastPt = this.trajectory[this.trajectory.length - 1];
+          const lastPx = ((lastPt.t - startT) / spanT) * (w - 40) + 20;
+          ctx.lineTo(lastPx, midY);
+          ctx.closePath();
+          ctx.fillStyle = grad;
+          ctx.fill();
+
+          // Neon stroke
+          ctx.save();
+          ctx.strokeStyle = '#06B6D4';
+          ctx.lineWidth = 2.5;
+          ctx.shadowColor = '#06B6D4';
+          ctx.shadowBlur = 10;
+          ctx.beginPath();
+          this.trajectory.forEach((pt, i) => {
+            const px = ((pt.t - startT) / spanT) * (w - 40) + 20;
+            const py = midY - pt.x * 6;
+            if (i === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+          });
+          ctx.stroke();
+
+          // Particle Head
+          const headY = midY - lastPt.x * 6;
+          ctx.beginPath();
+          ctx.arc(lastPx, headY, 5, 0, Math.PI * 2);
+          ctx.fillStyle = '#FFFFFF';
+          ctx.shadowColor = '#38BDF8';
+          ctx.shadowBlur = 15;
+          ctx.fill();
+          ctx.restore();
+        }
       } else if (this.dimension === 2) {
         // 2D Lattice Grid view
         const cx = w / 2;
         const cy = h / 2;
-        const scale = 5;
+        const scale = 5.5;
 
-        // Grid axes
-        ctx.strokeStyle = '#E5E7EB';
+        // Faint grid
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
         ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(cx, 0); ctx.lineTo(cx, h);
-        ctx.moveTo(0, cy); ctx.lineTo(w, cy);
-        ctx.stroke();
+        const gridStep = scale * 5;
+        for (let x = cx % gridStep; x < w; x += gridStep) {
+          ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+        }
+        for (let y = cy % gridStep; y < h; y += gridStep) {
+          ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+        }
 
-        // Origin marker
+        // Origin beacon
+        ctx.save();
         ctx.beginPath();
-        ctx.arc(cx, cy, 5, 0, Math.PI * 2);
+        ctx.arc(cx, cy, 6, 0, Math.PI * 2);
         ctx.fillStyle = '#EF4444';
+        ctx.shadowColor = '#EF4444';
+        ctx.shadowBlur = 15;
         ctx.fill();
+        ctx.restore();
 
-        // Path
-        ctx.strokeStyle = '#10B981';
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        this.trajectory.forEach((pt, i) => {
-          const px = cx + pt.x * scale;
-          const py = cy - pt.y * scale;
-          if (i === 0) ctx.moveTo(px, py);
-          else ctx.lineTo(px, py);
-        });
-        ctx.stroke();
+        // Path with gradient fade
+        if (this.trajectory.length > 1) {
+          ctx.save();
+          ctx.lineWidth = 1.8;
+          ctx.shadowColor = '#10B981';
+          ctx.shadowBlur = 6;
+          for (let i = 1; i < this.trajectory.length; i++) {
+            const alpha = 0.15 + 0.85 * (i / this.trajectory.length);
+            ctx.strokeStyle = `rgba(16, 185, 129, ${alpha})`;
+            ctx.beginPath();
+            ctx.moveTo(cx + this.trajectory[i - 1].x * scale, cy - this.trajectory[i - 1].y * scale);
+            ctx.lineTo(cx + this.trajectory[i].x * scale, cy - this.trajectory[i].y * scale);
+            ctx.stroke();
+          }
 
-        // Current particle
-        if (this.trajectory.length > 0) {
+          // Current particle
           const last = this.trajectory[this.trajectory.length - 1];
           ctx.beginPath();
-          ctx.arc(cx + last.x * scale, cy - last.y * scale, 4, 0, Math.PI * 2);
-          ctx.fillStyle = '#3B82F6';
+          ctx.arc(cx + last.x * scale, cy - last.y * scale, 4.5, 0, Math.PI * 2);
+          ctx.fillStyle = '#60A5FA';
+          ctx.shadowColor = '#60A5FA';
+          ctx.shadowBlur = 12;
           ctx.fill();
+          ctx.restore();
         }
       } else {
-        // 3D Isometric View
+        // 3D Isometric View with Dynamic Rotation
         const cx = w / 2;
-        const cy = h / 2 + 30;
-        const scale = 4;
+        const cy = h / 2 + 20;
+        const scale = 4.2;
 
-        // Isometric projection: isoX = (x - y) * cos(30), isoY = (x + y) * sin(30) - z
-        const cos30 = Math.cos(Math.PI / 6);
-        const sin30 = Math.sin(Math.PI / 6);
+        const theta = this.rotAngle;
+        const cosT = Math.cos(theta);
+        const sinT = Math.sin(theta);
+        const phi = 0.55; // vertical tilt
 
-        const project = (x, y, z) => ({
-          px: cx + (x - y) * cos30 * scale,
-          py: cy + (x + y) * sin30 * scale - z * scale
-        });
+        const project = (x, y, z) => {
+          const rx = x * cosT - y * sinT;
+          const ry = x * sinT + y * cosT;
+          const px = cx + rx * scale;
+          const py = cy + ry * Math.sin(phi) * scale - z * Math.cos(phi) * scale;
+          return { px, py, depth: ry };
+        };
 
-        // Axes
-        ctx.strokeStyle = '#D1D5DB';
+        // 3D Bounding Cube wireframe
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
         ctx.lineWidth = 1;
-        const o = project(0, 0, 0);
-        const axX = project(25, 0, 0);
-        const axY = project(0, 25, 0);
-        const axZ = project(0, 0, 25);
-
+        const b = 25;
+        const corners = [
+          project(-b, -b, -b), project(b, -b, -b), project(b, b, -b), project(-b, b, -b),
+          project(-b, -b, b), project(b, -b, b), project(b, b, b), project(-b, b, b)
+        ];
+        // Connect bottom
         ctx.beginPath();
-        ctx.moveTo(o.px, o.py); ctx.lineTo(axX.px, axX.py);
-        ctx.moveTo(o.px, o.py); ctx.lineTo(axY.px, axY.py);
-        ctx.moveTo(o.px, o.py); ctx.lineTo(axZ.px, axZ.py);
+        ctx.moveTo(corners[0].px, corners[0].py);
+        ctx.lineTo(corners[1].px, corners[1].py);
+        ctx.lineTo(corners[2].px, corners[2].py);
+        ctx.lineTo(corners[3].px, corners[3].py);
+        ctx.closePath();
         ctx.stroke();
 
-        ctx.fillStyle = '#9CA3AF';
-        ctx.font = '10px sans-serif';
-        ctx.fillText('+X', axX.px + 4, axX.py);
-        ctx.fillText('+Y', axY.px + 4, axY.py);
-        ctx.fillText('+Z', axZ.px, axZ.py - 4);
-
-        // Origin marker
+        // Connect pillars & top
+        for (let i = 0; i < 4; i++) {
+          ctx.beginPath();
+          ctx.moveTo(corners[i].px, corners[i].py);
+          ctx.lineTo(corners[i + 4].px, corners[i + 4].py);
+          ctx.stroke();
+        }
         ctx.beginPath();
-        ctx.arc(o.px, o.py, 4, 0, Math.PI * 2);
+        ctx.moveTo(corners[4].px, corners[4].py);
+        ctx.lineTo(corners[5].px, corners[5].py);
+        ctx.lineTo(corners[6].px, corners[6].py);
+        ctx.lineTo(corners[7].px, corners[7].py);
+        ctx.closePath();
+        ctx.stroke();
+
+        // Origin Beacon
+        const o = project(0, 0, 0);
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(o.px, o.py, 5, 0, Math.PI * 2);
         ctx.fillStyle = '#EF4444';
+        ctx.shadowColor = '#EF4444';
+        ctx.shadowBlur = 12;
         ctx.fill();
+        ctx.restore();
 
         // 3D Path
-        ctx.strokeStyle = '#8B5CF6';
-        ctx.lineWidth = 1.2;
-        ctx.beginPath();
-        this.trajectory.forEach((pt, i) => {
-          const pr = project(pt.x, pt.y, pt.z);
-          if (i === 0) ctx.moveTo(pr.px, pr.py);
-          else ctx.lineTo(pr.px, pr.py);
-        });
-        ctx.stroke();
+        if (this.trajectory.length > 1) {
+          ctx.save();
+          ctx.lineWidth = 1.4;
+          for (let i = 1; i < this.trajectory.length; i++) {
+            const p1 = project(this.trajectory[i - 1].x, this.trajectory[i - 1].y, this.trajectory[i - 1].z);
+            const p2 = project(this.trajectory[i].x, this.trajectory[i].y, this.trajectory[i].z);
+            const alpha = 0.2 + 0.8 * (i / this.trajectory.length);
+            ctx.strokeStyle = `rgba(168, 85, 247, ${alpha})`;
+            ctx.beginPath();
+            ctx.moveTo(p1.px, p1.py);
+            ctx.lineTo(p2.px, p2.py);
+            ctx.stroke();
+          }
 
-        if (this.trajectory.length > 0) {
+          // Head
           const last = this.trajectory[this.trajectory.length - 1];
           const pr = project(last.x, last.y, last.z);
           ctx.beginPath();
-          ctx.arc(pr.px, pr.py, 4, 0, Math.PI * 2);
-          ctx.fillStyle = '#EC4899';
+          ctx.arc(pr.px, pr.py, 4.5, 0, Math.PI * 2);
+          ctx.fillStyle = '#F472B6';
+          ctx.shadowColor = '#F472B6';
+          ctx.shadowBlur = 10;
           ctx.fill();
+          ctx.restore();
         }
       }
     }
@@ -4392,8 +4600,6 @@ window.MarkovSimulations = {
     simCount: 0,
     ruinCount: 0,
     currentPaths: [],
-    timer: null,
-    isRunning: false,
 
     init(canvasId) {
       this.canvas = document.getElementById(canvasId);
@@ -4410,7 +4616,6 @@ window.MarkovSimulations = {
     },
 
     reset() {
-      this.stop();
       this.simCount = 0;
       this.ruinCount = 0;
       this.currentPaths = [];
@@ -4422,14 +4627,14 @@ window.MarkovSimulations = {
       for (let b = 0; b < batchSize; b++) {
         let fortune = this.x0;
         const path = [fortune];
-        while (fortune > 0 && fortune < this.target && path.length < 400) {
+        while (fortune > 0 && fortune < this.target && path.length < 350) {
           fortune += Math.random() < this.p ? 1 : -1;
           path.push(fortune);
         }
         this.simCount++;
         if (fortune === 0) this.ruinCount++;
         this.currentPaths.push({ path, ruined: fortune === 0 });
-        if (this.currentPaths.length > 40) this.currentPaths.shift();
+        if (this.currentPaths.length > 35) this.currentPaths.shift();
       }
       this.updateDisplay();
       this.render();
@@ -4444,7 +4649,6 @@ window.MarkovSimulations = {
       const empRate = this.simCount > 0 ? (this.ruinCount / this.simCount).toFixed(3) : "0.000";
       if (empEl) empEl.innerText = empRate;
 
-      // Calculate Theoretical
       const p = this.p;
       const q = 1 - p;
       let theo = 0;
@@ -4464,58 +4668,81 @@ window.MarkovSimulations = {
       const ctx = this.ctx;
       const w = this.canvas.width;
       const h = this.canvas.height;
-      ctx.clearRect(0, 0, w, h);
 
-      // Boundaries: 0 (ruin) at bottom, target at top
-      const topY = 30;
-      const botY = h - 30;
+      // Dark Fintech Background
+      ctx.fillStyle = '#090d16';
+      ctx.fillRect(0, 0, w, h);
+
+      const topY = 32;
+      const botY = h - 32;
       const rangeY = botY - topY;
 
-      // Draw horizontal barrier lines
+      // Winning Zone Glow
+      const winGrad = ctx.createLinearGradient(0, 0, 0, topY + 40);
+      winGrad.addColorStop(0, 'rgba(16, 185, 129, 0.15)');
+      winGrad.addColorStop(1, 'rgba(16, 185, 129, 0)');
+      ctx.fillStyle = winGrad;
+      ctx.fillRect(0, 0, w, topY + 40);
+
+      // Ruin Zone Glow
+      const ruinGrad = ctx.createLinearGradient(0, botY - 40, 0, h);
+      ruinGrad.addColorStop(0, 'rgba(239, 68, 68, 0)');
+      ruinGrad.addColorStop(1, 'rgba(239, 68, 68, 0.15)');
+      ctx.fillStyle = ruinGrad;
+      ctx.fillRect(0, botY - 40, w, 40);
+
+      // Boundaries
       ctx.strokeStyle = '#EF4444';
       ctx.lineWidth = 2;
+      ctx.shadowColor = '#EF4444';
+      ctx.shadowBlur = 8;
       ctx.beginPath();
       ctx.moveTo(0, botY); ctx.lineTo(w, botY);
       ctx.stroke();
 
       ctx.strokeStyle = '#10B981';
+      ctx.shadowColor = '#10B981';
       ctx.beginPath();
       ctx.moveTo(0, topY); ctx.lineTo(w, topY);
       ctx.stroke();
+      ctx.shadowBlur = 0;
 
       // Labels
-      ctx.fillStyle = '#EF4444';
+      ctx.fillStyle = '#F87171';
       ctx.font = 'bold 11px sans-serif';
-      ctx.fillText('破产线 (0元)', 15, botY - 8);
+      ctx.fillText('⚡ 破产深渊 (0元)', 15, botY - 8);
 
-      ctx.fillStyle = '#10B981';
-      ctx.fillText(`胜利线 (${this.target}元)`, 15, topY + 16);
+      ctx.fillStyle = '#34D399';
+      ctx.fillText(`🏆 胜出离场 (${this.target}元)`, 15, topY + 16);
 
       // Initial line
       const initY = botY - (this.x0 / this.target) * rangeY;
-      ctx.strokeStyle = '#E5E7EB';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
       ctx.lineWidth = 1;
       ctx.setLineDash([4, 4]);
       ctx.beginPath();
       ctx.moveTo(0, initY); ctx.lineTo(w, initY);
       ctx.stroke();
       ctx.setLineDash([]);
-      ctx.fillStyle = '#6B7280';
-      ctx.fillText(`初始本金 (${this.x0}元)`, 15, initY - 5);
+      ctx.fillStyle = '#94A3B8';
+      ctx.font = '10px sans-serif';
+      ctx.fillText(`起跑本金 (${this.x0}元)`, 15, initY - 5);
 
       // Draw paths
       this.currentPaths.forEach(item => {
-        ctx.strokeStyle = item.ruined ? 'rgba(239, 68, 68, 0.45)' : 'rgba(16, 185, 129, 0.5)';
-        ctx.lineWidth = 1.2;
+        ctx.save();
+        ctx.strokeStyle = item.ruined ? 'rgba(248, 113, 113, 0.45)' : 'rgba(52, 211, 153, 0.55)';
+        ctx.lineWidth = 1.3;
         ctx.beginPath();
-        const maxSteps = Math.max(item.path.length, 60);
+        const maxSteps = Math.max(item.path.length, 50);
         item.path.forEach((val, step) => {
-          const px = (step / maxSteps) * (w - 60) + 30;
+          const px = (step / maxSteps) * (w - 70) + 35;
           const py = botY - (val / this.target) * rangeY;
           if (step === 0) ctx.moveTo(px, py);
           else ctx.lineTo(px, py);
         });
         ctx.stroke();
+        ctx.restore();
       });
     }
   },
@@ -4524,7 +4751,7 @@ window.MarkovSimulations = {
   tomJerry: {
     canvas: null,
     ctx: null,
-    mode: 'positive', // 'positive', 'null', 'transient'
+    mode: 'positive',
     pValues: [],
     runLength: 0,
     history: [],
@@ -4546,17 +4773,13 @@ window.MarkovSimulations = {
       this.history = [{ step: 0, run: 0, prod: 1 }];
       this.infiniteProduct = 1;
 
-      // Precompute 100 values of p_i
       this.pValues = [];
       for (let i = 0; i < 200; i++) {
         if (m === 'positive') {
-          // p_i = 0.3 constant (positive recurrent)
           this.pValues.push(0.35);
         } else if (m === 'null') {
-          // p_i = 1 / (i + 2) (null recurrent, sum diverges, mean time infinite)
           this.pValues.push(1 / (i + 2));
         } else {
-          // p_i = 1 / (i + 2)^2 (transient, sum converges, infinite product > 0)
           this.pValues.push(1 / Math.pow(i + 2, 2));
         }
       }
@@ -4583,14 +4806,11 @@ window.MarkovSimulations = {
       const rand = Math.random();
 
       if (rand < pFail) {
-        // Failed! Drop back to 0
         this.runLength = 0;
       } else {
-        // Success! Run grows by 1
         this.runLength++;
       }
 
-      // Update infinite product up to current run
       let prod = 1;
       for (let i = 0; i <= this.runLength; i++) {
         prod *= (1 - this.pValues[i]);
@@ -4602,7 +4822,7 @@ window.MarkovSimulations = {
         run: this.runLength,
         prod: prod
       });
-      if (this.history.length > 250) this.history.shift();
+      if (this.history.length > 200) this.history.shift();
 
       this.updateDisplay();
       this.render();
@@ -4617,14 +4837,14 @@ window.MarkovSimulations = {
       if (prodEl) prodEl.innerText = this.infiniteProduct.toFixed(4);
       if (regimeEl) {
         if (this.mode === 'positive') {
-          regimeEl.innerText = "正常返 (Positive Recurrent) - 期望回访时间有限";
-          regimeEl.className = "font-bold text-emerald-600";
+          regimeEl.innerText = "正常返 (Positive Recurrent) · 平均回访步数有限";
+          regimeEl.className = "font-bold text-emerald-400";
         } else if (this.mode === 'null') {
-          regimeEl.innerText = "零常返 (Null Recurrent) - 必回访但平均时间无穷";
-          regimeEl.className = "font-bold text-amber-600";
+          regimeEl.innerText = "零常返 (Null Recurrent) · 必回访但平均时间无穷";
+          regimeEl.className = "font-bold text-amber-400";
         } else {
-          regimeEl.innerText = "非常返 (Transient) - 连胜无限逃逸，回访概率 < 1";
-          regimeEl.className = "font-bold text-rose-600";
+          regimeEl.innerText = "非常返 (Transient) · 连胜逃逸，回访概率 < 1";
+          regimeEl.className = "font-bold text-rose-400";
         }
       }
     },
@@ -4634,31 +4854,50 @@ window.MarkovSimulations = {
       const ctx = this.ctx;
       const w = this.canvas.width;
       const h = this.canvas.height;
-      ctx.clearRect(0, 0, w, h);
 
-      // Plot run lengths as bar / line
-      const maxRun = Math.max(15, ...this.history.map(d => d.run));
+      ctx.fillStyle = '#090d16';
+      ctx.fillRect(0, 0, w, h);
+
+      const maxRun = Math.max(16, ...this.history.map(d => d.run));
       const padL = 40, padR = 20, padB = 30, padT = 20;
       const chartW = w - padL - padR;
       const chartH = h - padT - padB;
 
-      // Axes
-      ctx.strokeStyle = '#E5E7EB';
+      // Coordinate axes
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(padL, padT); ctx.lineTo(padL, h - padB);
       ctx.lineTo(w - padR, h - padB);
       ctx.stroke();
 
-      // Axis labels
-      ctx.fillStyle = '#9CA3AF';
+      ctx.fillStyle = '#64748B';
       ctx.font = '10px sans-serif';
-      ctx.fillText(`连胜长度 max: ${maxRun}`, padL + 10, padT + 12);
-      ctx.fillText('时间步 (Steps)', w - 80, h - 10);
+      ctx.fillText(`连胜长度 (max: ${maxRun})`, padL + 8, padT + 12);
 
-      // Line path
+      // Area fill
+      const grad = ctx.createLinearGradient(0, padT, 0, h - padB);
+      grad.addColorStop(0, 'rgba(245, 158, 11, 0.35)');
+      grad.addColorStop(1, 'rgba(245, 158, 11, 0.02)');
+
+      ctx.beginPath();
+      ctx.moveTo(padL, h - padB);
+      this.history.forEach((d, i) => {
+        const px = padL + (i / this.history.length) * chartW;
+        const py = (h - padB) - (d.run / maxRun) * chartH;
+        ctx.lineTo(px, py);
+      });
+      ctx.lineTo(padL + chartW, h - padB);
+      ctx.closePath();
+      ctx.fillStyle = grad;
+      ctx.fill();
+
+      // Glowing Line
+      ctx.save();
       ctx.strokeStyle = '#F59E0B';
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 2.2;
+      ctx.shadowColor = '#F59E0B';
+      ctx.shadowBlur = 8;
       ctx.beginPath();
       this.history.forEach((d, i) => {
         const px = padL + (i / this.history.length) * chartW;
@@ -4667,6 +4906,7 @@ window.MarkovSimulations = {
         else ctx.lineTo(px, py);
       });
       ctx.stroke();
+      ctx.restore();
     }
   },
 
@@ -4710,7 +4950,6 @@ window.MarkovSimulations = {
       }
     },
 
-    // Sample from Poisson(lambda)
     poissonSample(lam) {
       const L = Math.exp(-lam);
       let k = 0;
@@ -4727,12 +4966,11 @@ window.MarkovSimulations = {
       if (this.queue === 0) {
         this.queue = arrivals;
       } else {
-        // 1 customer served, new arrivals added
         this.queue = this.queue - 1 + arrivals;
       }
 
       this.history.push({ step: this.history.length, q: this.queue });
-      if (this.history.length > 250) this.history.shift();
+      if (this.history.length > 200) this.history.shift();
 
       this.updateDisplay();
       this.render();
@@ -4745,18 +4983,18 @@ window.MarkovSimulations = {
 
       if (qEl) qEl.innerText = this.queue;
       const drift = (this.lambda - 1).toFixed(2);
-      if (driftEl) driftEl.innerText = `${drift} (每步平均增量)`;
+      if (driftEl) driftEl.innerText = `${drift} (单步期望增量)`;
 
       if (statusEl) {
         if (this.lambda < 0.99) {
-          statusEl.innerText = "正常返 (λ < 1) - 负漂移，队伍快速自我清空";
-          statusEl.className = "font-bold text-emerald-600";
+          statusEl.innerText = "正常返 (λ < 1) · 强负漂移，队列快速清空";
+          statusEl.className = "font-bold text-emerald-400";
         } else if (this.lambda <= 1.01) {
-          statusEl.innerText = "零常返 (λ = 1) - 零漂移，队伍漫游但最终会回0";
-          statusEl.className = "font-bold text-amber-600";
+          statusEl.innerText = "零常返 (λ = 1) · 零漂移临界态，长程游走";
+          statusEl.className = "font-bold text-amber-400";
         } else {
-          statusEl.innerText = "非常返 (λ > 1) - 正漂移，队伍向无穷大爆炸逃逸！";
-          statusEl.className = "font-bold text-rose-600";
+          statusEl.innerText = "非常返 (λ > 1) · 正漂移失控，队列向无穷大爆炸！";
+          statusEl.className = "font-bold text-rose-400";
         }
       }
     },
@@ -4766,27 +5004,50 @@ window.MarkovSimulations = {
       const ctx = this.ctx;
       const w = this.canvas.width;
       const h = this.canvas.height;
-      ctx.clearRect(0, 0, w, h);
 
-      const maxQ = Math.max(15, ...this.history.map(d => d.q));
-      const padL = 40, padR = 20, padB = 30, padT = 20;
+      ctx.fillStyle = '#090d16';
+      ctx.fillRect(0, 0, w, h);
+
+      // Top: Animated Customer Queue visual buffer
+      const bufferY = 28;
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+      ctx.fillRect(30, bufferY, w - 60, 24);
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+      ctx.strokeRect(30, bufferY, w - 60, 24);
+
+      // Customer beads
+      const beadCount = Math.min(this.queue, 40);
+      for (let i = 0; i < beadCount; i++) {
+        ctx.beginPath();
+        ctx.arc(42 + i * 11, bufferY + 12, 4, 0, Math.PI * 2);
+        ctx.fillStyle = this.lambda > 1 ? '#F43F5E' : '#38BDF8';
+        ctx.fill();
+      }
+
+      ctx.fillStyle = '#94A3B8';
+      ctx.font = '10px sans-serif';
+      ctx.fillText(`服务台排队视窗 (现有人数: ${this.queue})`, 32, bufferY - 8);
+
+      // Bottom: Chart
+      const maxQ = Math.max(16, ...this.history.map(d => d.q));
+      const padL = 40, padR = 20, padB = 26, padT = 75;
       const chartW = w - padL - padR;
       const chartH = h - padT - padB;
 
-      // Axes
-      ctx.strokeStyle = '#E5E7EB';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(padL, padT); ctx.lineTo(padL, h - padB);
       ctx.lineTo(w - padR, h - padB);
       ctx.stroke();
 
-      ctx.fillStyle = '#9CA3AF';
-      ctx.font = '10px sans-serif';
-      ctx.fillText(`排队人数 (max: ${maxQ})`, padL + 10, padT + 12);
+      // Chart area
+      ctx.save();
+      const grad = ctx.createLinearGradient(0, padT, 0, h - padB);
+      const isBurst = this.lambda > 1;
+      grad.addColorStop(0, isBurst ? 'rgba(244, 63, 94, 0.35)' : 'rgba(56, 189, 248, 0.35)');
+      grad.addColorStop(1, 'rgba(0,0,0,0)');
 
-      // Area fill
-      ctx.fillStyle = this.lambda > 1 ? 'rgba(239, 68, 68, 0.15)' : 'rgba(59, 130, 246, 0.15)';
       ctx.beginPath();
       ctx.moveTo(padL, h - padB);
       this.history.forEach((d, i) => {
@@ -4796,11 +5057,14 @@ window.MarkovSimulations = {
       });
       ctx.lineTo(padL + chartW, h - padB);
       ctx.closePath();
+      ctx.fillStyle = grad;
       ctx.fill();
 
-      // Line
-      ctx.strokeStyle = this.lambda > 1 ? '#EF4444' : '#3B82F6';
-      ctx.lineWidth = 2;
+      // Stroke
+      ctx.strokeStyle = isBurst ? '#F43F5E' : '#38BDF8';
+      ctx.lineWidth = 2.2;
+      ctx.shadowColor = isBurst ? '#F43F5E' : '#38BDF8';
+      ctx.shadowBlur = 8;
       ctx.beginPath();
       this.history.forEach((d, i) => {
         const px = padL + (i / this.history.length) * chartW;
@@ -4809,18 +5073,20 @@ window.MarkovSimulations = {
         else ctx.lineTo(px, py);
       });
       ctx.stroke();
+      ctx.restore();
     }
   }
 };
 
 </script>
-<script>
-// Main Application Logic & View Controller
+  <script>
+// Main Application Logic & View Controller (High Aesthetic Edition)
 class MarkovApp {
   constructor() {
-    this.currentView = 'graph'; // 'graph', 'stepper', 'sim', 'codex'
-    this.currentNodeId = 'thm-1-2-1'; // Default selected node
+    this.currentView = 'graph';
+    this.currentNodeId = 'thm-1-2-1';
     this.graphInstance = null;
+    this.masteredNodes = new Set(JSON.parse(localStorage.getItem('markov_mastered') || '[]'));
     this.init();
   }
 
@@ -4831,6 +5097,7 @@ class MarkovApp {
     this.initSimulations();
     this.renderCodexList();
     this.renderStepper(this.currentNodeId);
+    this.updateGlobalProgress();
     this.typesetMath();
   }
 
@@ -4852,11 +5119,11 @@ class MarkovApp {
 
     document.querySelectorAll('.nav-tab-btn').forEach(btn => {
       if (btn.dataset.view === viewName) {
-        btn.classList.add('bg-blue-600', 'text-white');
-        btn.classList.remove('text-gray-600', 'hover:bg-gray-100');
+        btn.classList.add('bg-blue-600/90', 'text-white', 'shadow-md');
+        btn.classList.remove('text-slate-400', 'hover:bg-slate-800/60');
       } else {
-        btn.classList.remove('bg-blue-600', 'text-white');
-        btn.classList.add('text-gray-600', 'hover:bg-gray-100');
+        btn.classList.remove('bg-blue-600/90', 'text-white', 'shadow-md');
+        btn.classList.add('text-slate-400', 'hover:bg-slate-800/60');
       }
     });
 
@@ -4878,11 +5145,9 @@ class MarkovApp {
     this.graphInstance = new MarkovGraph('graph-canvas', 'graph-container', (nodeId) => {
       this.currentNodeId = nodeId;
       this.renderStepper(nodeId);
-      // Auto open drawer or preview
       this.showQuickPreview(nodeId);
     });
 
-    // Zoom and filter controls
     document.getElementById('btn-zoom-in')?.addEventListener('click', () => this.graphInstance.zoomIn());
     document.getElementById('btn-zoom-out')?.addEventListener('click', () => this.graphInstance.zoomOut());
     document.getElementById('btn-zoom-reset')?.addEventListener('click', () => this.graphInstance.resetView());
@@ -4976,21 +5241,23 @@ class MarkovApp {
     previewEl.innerHTML = `
       <div class="flex items-start justify-between">
         <div>
-          <span class="inline-block px-2 py-0.5 text-xs font-semibold rounded bg-blue-100 text-blue-800 mb-1">
+          <span class="inline-block px-2.5 py-0.5 text-[11px] font-semibold rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30 mb-1.5">
             ${node.badge || node.type} · §${node.section}
           </span>
-          <h4 class="font-bold text-gray-900 text-base">${node.title}</h4>
+          <h4 class="font-bold text-slate-100 text-sm leading-snug">${node.title}</h4>
         </div>
-        <button onclick="document.getElementById('graph-quick-preview').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 text-sm">✕</button>
+        <button onclick="document.getElementById('graph-quick-preview').classList.add('hidden')" class="text-slate-400 hover:text-white text-base">✕</button>
       </div>
-      <p class="text-sm text-gray-600 mt-2">${node.summary}</p>
-      <div class="mt-3 bg-amber-50 border border-amber-200 rounded p-2 text-xs text-amber-800">
-        💡 <strong>白话隐喻：</strong> ${node.intuitiveAnalogy}
+      <p class="text-xs text-slate-300 mt-2 leading-relaxed">${node.summary}</p>
+      <div class="mt-3 bg-amber-500/10 border border-amber-500/20 rounded-xl p-2.5 text-xs text-amber-200">
+        💡 <strong>直觉：</strong> ${node.intuitiveAnalogy}
       </div>
-      <div class="mt-4 flex space-x-3">
-        <button id="btn-goto-stepper" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-medium transition shadow-sm">
-          🔍 查看显微镜逐行证明
+      <div class="mt-3.5 flex items-center justify-between">
+        <button id="btn-goto-stepper" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold transition shadow-md flex items-center space-x-1.5">
+          <span>🔬 展开显微镜证明</span>
+          <span>›</span>
         </button>
+        <span class="text-[11px] text-slate-400 font-mono">${node.dependencies.length} 前置 / ${node.unlocks.length} 引申</span>
       </div>
     `;
 
@@ -4998,6 +5265,41 @@ class MarkovApp {
       this.switchView('stepper');
       this.renderStepper(nodeId);
     });
+  }
+
+  toggleMastered(nodeId) {
+    if (this.masteredNodes.has(nodeId)) {
+      this.masteredNodes.delete(nodeId);
+    } else {
+      this.masteredNodes.add(nodeId);
+    }
+    localStorage.setItem('markov_mastered', JSON.stringify([...this.masteredNodes]));
+    this.updateGlobalProgress();
+    this.renderStepper(nodeId);
+    this.renderCodexList();
+  }
+
+  updateGlobalProgress() {
+    const total = window.MARKOV_DATA ? window.MARKOV_DATA.length : 71;
+    const mastered = this.masteredNodes.size;
+    const pct = Math.round((mastered / total) * 100);
+
+    const barEl = document.getElementById('global-progress-bar');
+    const txtEl = document.getElementById('global-progress-text');
+    if (barEl) barEl.style.width = `${pct}%`;
+    if (txtEl) txtEl.innerText = `${mastered} / ${total} (${pct}%)`;
+  }
+
+  locateInGraph(nodeId) {
+    this.switchView('graph');
+    if (this.graphInstance) {
+      const node = this.graphInstance.nodes.find(n => n.id === nodeId);
+      if (node) {
+        this.graphInstance.panX = this.graphInstance.width / 2 - node.x * this.graphInstance.scale;
+        this.graphInstance.panY = this.graphInstance.height / 2 - node.y * this.graphInstance.scale;
+        this.graphInstance.selectNode(nodeId);
+      }
+    }
   }
 
   renderStepper(nodeId) {
@@ -5008,142 +5310,188 @@ class MarkovApp {
     const container = document.getElementById('stepper-content');
     if (!container) return;
 
-    // Render breadcrumbs
-    const breadcrumbs = `
-      <div class="flex items-center space-x-2 text-xs text-gray-500 mb-4">
-        <span>第1章 离散时间马氏链</span>
-        <span>›</span>
-        <span>§${node.section}</span>
-        <span>›</span>
-        <span class="font-medium text-gray-800">${node.title.split(':')[0]}</span>
-      </div>
-    `;
+    const isMastered = this.masteredNodes.has(nodeId);
 
-    // Render Header Card
+    // Find current index, next, prev
+    const currentIndex = window.MARKOV_DATA.findIndex(n => n.id === nodeId);
+    const prevNode = currentIndex > 0 ? window.MARKOV_DATA[currentIndex - 1] : null;
+    const nextNode = currentIndex < window.MARKOV_DATA.length - 1 ? window.MARKOV_DATA[currentIndex + 1] : null;
+
+    // Header Card
     const headerCard = `
-      <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm mb-6">
-        <div class="flex flex-wrap items-center gap-2 mb-3">
-          <span class="px-2.5 py-1 text-xs font-bold rounded-full bg-blue-600 text-white">${node.badge || node.type}</span>
-          <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-700">小节 §${node.section}</span>
-          ${(node.tags || []).map(t => `<span class="px-2 py-0.5 text-[11px] rounded bg-blue-50 text-blue-600 font-mono">#${t}</span>`).join('')}
+      <div class="bg-slate-800/80 backdrop-blur-md border border-slate-700/60 rounded-2xl p-6 shadow-xl mb-6">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+          <div class="flex items-center gap-2">
+            <span class="px-3 py-1 text-xs font-bold rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">
+              ${node.badge || node.type}
+            </span>
+            <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-slate-700/60 text-slate-300">
+              小节 §${node.section}
+            </span>
+            ${(node.tags || []).map(t => `<span class="px-2 py-0.5 text-[11px] rounded bg-slate-700/40 text-sky-400 font-mono">#${t}</span>`).join('')}
+          </div>
+
+          <div class="flex items-center space-x-2">
+            <button onclick="window.APP.locateInGraph('${node.id}')" class="px-3 py-1.5 rounded-xl bg-slate-700/60 hover:bg-slate-700 text-slate-300 text-xs font-medium transition flex items-center space-x-1.5 border border-slate-600/40">
+              <span>🌐</span>
+              <span>在拓扑图中定位</span>
+            </button>
+            <button onclick="window.APP.toggleMastered('${node.id}')" class="px-3 py-1.5 rounded-xl ${isMastered ? 'bg-emerald-600/30 text-emerald-300 border border-emerald-500/40' : 'bg-slate-700/60 text-slate-400 border border-slate-600/40 hover:text-white'} text-xs font-medium transition flex items-center space-x-1.5">
+              <span>${isMastered ? '✓ 已掌握' : '○ 标记为已学'}</span>
+            </button>
+          </div>
         </div>
-        <h2 class="text-2xl font-bold text-gray-900 mb-2">${node.title}</h2>
-        <p class="text-base text-gray-600 leading-relaxed">${node.summary}</p>
+
+        <h2 class="text-2xl font-extrabold text-white mb-2 leading-snug tracking-tight">${node.title}</h2>
+        <p class="text-sm text-slate-300 leading-relaxed">${node.summary}</p>
       </div>
     `;
 
-    // Render Layer 1: Intuition Card
+    // Layer 1: Intuition Card
     const intuitionCard = `
-      <div class="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-5 mb-6 shadow-sm">
-        <div class="flex items-center space-x-2 mb-2 text-amber-800 font-bold text-base">
-          <span>💡</span>
-          <span>Layer 1：数学白痴友好·生活与物理直觉隐喻</span>
+      <div class="bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/30 rounded-2xl p-5 mb-6 shadow-md">
+        <div class="flex items-center space-x-2 mb-2.5 text-amber-400 font-bold text-sm">
+          <span class="text-base">💡</span>
+          <span>Layer 1：数学白痴友好 · 生活与物理直觉隐喻</span>
         </div>
-        <p class="text-sm text-amber-900 leading-relaxed">${node.intuitiveAnalogy}</p>
+        <p class="text-sm text-amber-100/90 leading-relaxed">${node.intuitiveAnalogy}</p>
       </div>
     `;
 
-    // Render Formal Math Statement
+    // Formal Math Statement Card
     const statementCard = `
-      <div class="bg-gray-50 border border-gray-200 rounded-xl p-5 mb-6 shadow-sm">
-        <div class="text-gray-700 font-bold text-sm mb-2 flex items-center space-x-1.5">
+      <div class="bg-slate-850 bg-slate-900/60 border border-slate-800 rounded-2xl p-5 mb-6 shadow-sm">
+        <div class="text-slate-400 font-bold text-xs uppercase tracking-wider mb-2.5 flex items-center space-x-1.5">
           <span>📜</span>
           <span>严格数学定义 / 命题陈述</span>
         </div>
-        <div class="text-sm text-gray-800 overflow-x-auto py-2 leading-relaxed">
+        <div class="text-sm text-slate-200 overflow-x-auto py-1 leading-relaxed">
           ${node.mathStatement.replace(/\n/g, '<br/>')}
         </div>
       </div>
     `;
 
-    // Render Layer 2: Blueprint
+    // Layer 2: Proof Blueprint Card
     const blueprintCard = `
-      <div class="bg-blue-50 border border-blue-200 rounded-xl p-5 mb-6 shadow-sm">
-        <div class="flex items-center space-x-2 mb-2 text-blue-800 font-bold text-sm">
-          <span>🗺️</span>
+      <div class="bg-blue-500/10 border border-blue-500/30 rounded-2xl p-5 mb-6 shadow-sm">
+        <div class="flex items-center space-x-2 mb-2 text-blue-400 font-bold text-sm">
+          <span class="text-base">🗺️</span>
           <span>Layer 2：证明战略路线图 (Proof Blueprint)</span>
         </div>
-        <p class="text-sm text-blue-900 leading-relaxed font-sans">${node.blueprint || "由定义直接展开。"}</p>
+        <p class="text-sm text-blue-100/90 leading-relaxed font-sans">${node.blueprint || "由定义直接展开。"}</p>
       </div>
     `;
 
-    // Render Layer 3: Microscopic Proof
+    // Layer 3: Microscopic Proof Steps
     const microSteps = (node.microProof || []).map((step, idx) => `
-      <div class="border border-gray-200 rounded-lg p-4 bg-white mb-3 hover:border-blue-400 transition shadow-xs">
+      <div class="border border-slate-700/60 rounded-xl p-4 bg-slate-800/50 mb-3.5 hover:border-slate-600 transition shadow-xs">
         <div class="flex items-center justify-between mb-2">
-          <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-800 text-xs font-bold">
-            ${step.step || idx + 1}
+          <span class="inline-flex items-center justify-center px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 text-xs font-bold border border-blue-500/30 font-mono">
+            Step ${step.step || idx + 1}
           </span>
-          <span class="text-xs text-gray-500">步骤推导</span>
+          <span class="text-[11px] text-slate-400">细致公式推导</span>
         </div>
-        <div class="bg-gray-50 rounded p-3 font-mono text-sm text-gray-900 overflow-x-auto mb-2 border border-gray-100">
-          $$${step.formula}$$
+        <div class="bg-slate-950/70 rounded-lg p-3 font-mono text-sm text-sky-200 overflow-x-auto mb-2.5 border border-slate-800">
+          $${step.formula}$
         </div>
-        <p class="text-sm text-gray-700 leading-relaxed mb-2">${step.explanation}</p>
-        <div class="bg-emerald-50 border-l-4 border-emerald-500 p-2.5 rounded-r text-xs text-emerald-900">
-          <strong>🔬 为什么这一步成立？</strong> ${step.why}
+        <p class="text-sm text-slate-300 leading-relaxed mb-2.5">${step.explanation}</p>
+        <div class="bg-emerald-500/10 border-l-4 border-emerald-500 p-3 rounded-r-lg text-xs text-emerald-200">
+          <strong class="text-emerald-400">🔬 为什么这一步成立？</strong> ${step.why}
         </div>
       </div>
     `).join('');
 
     const proofCard = `
       <div class="mb-6">
-        <div class="text-gray-900 font-bold text-lg mb-3 flex items-center space-x-2">
+        <div class="text-slate-100 font-bold text-base mb-3 flex items-center space-x-2">
           <span>🔬</span>
-          <span>Layer 3：显微镜级逐行无跳步精解 (${node.microProof ? node.microProof.length : 0} 步)</span>
+          <span>Layer 3：显微镜级逐行无跳步精解 (${node.microProof ? node.microProof.length : 0} 步推导)</span>
         </div>
         <div>${microSteps}</div>
       </div>
     `;
 
-    // Render Layer 4: Pitfalls
+    // Layer 4: Pitfalls Card
     const pitfallsList = (node.pitfalls || []).map(p => `
-      <li class="flex items-start space-x-2 text-xs text-rose-800 mb-1.5">
-        <span class="text-rose-500 mt-0.5 font-bold">✕</span>
+      <li class="flex items-start space-x-2 text-xs text-rose-200/90 mb-2">
+        <span class="text-rose-400 font-bold mt-0.5">✕</span>
         <span class="leading-relaxed">${p}</span>
       </li>
     `).join('');
 
     const pitfallsCard = `
-      <div class="bg-rose-50 border border-rose-200 rounded-xl p-5 mb-6 shadow-sm">
-        <div class="flex items-center space-x-2 mb-2 text-rose-800 font-bold text-sm">
-          <span>⚠️</span>
-          <span>易错坑点警示与反例辨析 (Pitfalls & Counterexamples)</span>
+      <div class="bg-rose-500/10 border border-rose-500/30 rounded-2xl p-5 mb-6 shadow-sm">
+        <div class="flex items-center space-x-2 mb-2 text-rose-400 font-bold text-sm">
+          <span class="text-base">⚠️</span>
+          <span>Layer 4：易错坑点警示与反例辨析 (Pitfalls & Counterexamples)</span>
         </div>
         <ul class="list-none pl-1">${pitfallsList}</ul>
       </div>
     `;
 
-    // Render Dependencies & Unlocks
+    // Topological Dependencies & Unlocks
     const depsHtml = (node.dependencies || []).map(d => {
       const depNode = window.MARKOV_MAP[d];
       if (!depNode) return '';
-      return `<button onclick="window.APP.renderStepper('${d}')" class="px-2.5 py-1 rounded bg-amber-100 text-amber-900 text-xs font-medium hover:bg-amber-200 transition">⬅️ ${depNode.title.split(':')[0]}</button>`;
+      return `<button onclick="window.APP.renderStepper('${d}')" class="px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-medium hover:bg-amber-500/30 transition">⬅️ ${depNode.title.split(':')[0]}</button>`;
     }).join(' ');
 
     const unlsHtml = (node.unlocks || []).map(u => {
       const unlNode = window.MARKOV_MAP[u];
       if (!unlNode) return '';
-      return `<button onclick="window.APP.renderStepper('${u}')" class="px-2.5 py-1 rounded bg-emerald-100 text-emerald-900 text-xs font-medium hover:bg-emerald-200 transition">➡️ ${unlNode.title.split(':')[0]}</button>`;
+      return `<button onclick="window.APP.renderStepper('${u}')" class="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-medium hover:bg-emerald-500/30 transition">➡️ ${unlNode.title.split(':')[0]}</button>`;
     }).join(' ');
 
     const relationsCard = `
-      <div class="bg-gray-50 border border-gray-200 rounded-xl p-5 mb-8">
-        <h4 class="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3">拓扑血缘关系网络</h4>
+      <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-5 mb-8">
+        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">因果拓扑链路网络</h4>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <div class="text-xs font-semibold text-amber-700 mb-1.5">前置依赖输入 (Prerequisites)：</div>
-            <div class="flex flex-wrap gap-1.5">${depsHtml || '<span class="text-xs text-gray-400">无前置依赖（公理或第一定义）</span>'}</div>
+            <div class="text-xs font-semibold text-amber-400 mb-2">前置输入依赖 (Prerequisites)：</div>
+            <div class="flex flex-wrap gap-1.5">${depsHtml || '<span class="text-xs text-slate-500">公理或第一定义（无前置依赖）</span>'}</div>
           </div>
           <div>
-            <div class="text-xs font-semibold text-emerald-700 mb-1.5">后继解锁引申 (Unlocks Downstream)：</div>
-            <div class="flex flex-wrap gap-1.5">${unlsHtml || '<span class="text-xs text-gray-400">终局节点</span>'}</div>
+            <div class="text-xs font-semibold text-emerald-400 mb-2">后继解锁引申 (Unlocks Downstream)：</div>
+            <div class="flex flex-wrap gap-1.5">${unlsHtml || '<span class="text-xs text-slate-500">终局应用节点</span>'}</div>
           </div>
         </div>
       </div>
     `;
 
-    container.innerHTML = breadcrumbs + headerCard + intuitionCard + statementCard + blueprintCard + proofCard + pitfallsCard + relationsCard;
+    // Bottom Navigation Bar (Prev / Next)
+    const navBar = `
+      <div class="flex items-center justify-between pt-4 border-t border-slate-700/60 mb-12">
+        ${prevNode ? `
+          <button onclick="window.APP.renderStepper('${prevNode.id}')" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition border border-slate-700 flex items-center space-x-2">
+            <span>‹ 上一条：</span>
+            <span class="font-bold text-white">${prevNode.title.split(':')[0]}</span>
+          </button>
+        ` : '<div></div>'}
+
+        ${nextNode ? `
+          <button onclick="window.APP.renderStepper('${nextNode.id}')" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium transition shadow-md flex items-center space-x-2">
+            <span>下一条：</span>
+            <span class="font-bold">${nextNode.title.split(':')[0]}</span>
+            <span>›</span>
+          </button>
+        ` : '<div></div>'}
+      </div>
+    `;
+
+    container.innerHTML = headerCard + intuitionCard + statementCard + blueprintCard + proofCard + pitfallsCard + relationsCard + navBar;
+
+    // Highlight active in sidebar
+    document.querySelectorAll('.stepper-nav-item').forEach(el => {
+      if (el.dataset.id === nodeId) {
+        el.classList.add('bg-blue-600/30', 'text-sky-300', 'border-blue-500/40');
+        el.classList.remove('text-slate-400');
+        el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      } else {
+        el.classList.remove('bg-blue-600/30', 'text-sky-300', 'border-blue-500/40');
+        el.classList.add('text-slate-400');
+      }
+    });
+
     this.typesetMath();
   }
 
@@ -5169,22 +5517,29 @@ class MarkovApp {
     const countEl = document.getElementById('codex-count');
     if (countEl) countEl.innerText = `${filtered.length} 个条目`;
 
-    listContainer.innerHTML = filtered.map(item => `
-      <div onclick="window.APP.openFromCodex('${item.id}')" class="p-4 bg-white border border-gray-200 hover:border-blue-500 rounded-xl cursor-pointer transition shadow-xs hover:shadow-md">
-        <div class="flex items-center justify-between mb-1.5">
-          <div class="flex items-center space-x-2">
-            <span class="px-2 py-0.5 text-xs font-bold rounded bg-gray-100 text-gray-700">§${item.section}</span>
-            <span class="px-2 py-0.5 text-xs font-semibold rounded bg-blue-100 text-blue-800">${item.badge || item.type}</span>
+    listContainer.innerHTML = filtered.map(item => {
+      const isMastered = this.masteredNodes.has(item.id);
+      return `
+        <div onclick="window.APP.openFromCodex('${item.id}')" class="p-5 bg-slate-800/60 border border-slate-700/60 hover:border-blue-500/60 rounded-2xl cursor-pointer transition shadow-md hover:shadow-xl hover:bg-slate-800/90 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <div class="flex items-center space-x-2">
+                <span class="px-2.5 py-0.5 text-xs font-bold rounded-full bg-slate-700/80 text-slate-300">§${item.section}</span>
+                <span class="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">${item.badge || item.type}</span>
+              </div>
+              <span class="text-xs ${isMastered ? 'text-emerald-400 font-bold' : 'text-slate-500'}">
+                ${isMastered ? '✓ 已掌握' : '未掌握'}
+              </span>
+            </div>
+            <h3 class="font-bold text-white text-base mb-1.5 leading-snug">${item.title}</h3>
+            <p class="text-xs text-slate-300 line-clamp-2 leading-relaxed mb-3">${item.summary}</p>
           </div>
-          <span class="text-xs text-blue-600 font-medium">展开精讲 ›</span>
+          <div class="flex flex-wrap gap-1.5 pt-2 border-t border-slate-700/40">
+            ${(item.tags || []).map(t => `<span class="px-2 py-0.5 bg-slate-900/60 text-[10px] text-sky-400 rounded-md font-mono">#${t}</span>`).join('')}
+          </div>
         </div>
-        <h3 class="font-bold text-gray-900 text-base mb-1">${item.title}</h3>
-        <p class="text-xs text-gray-600 line-clamp-2 leading-relaxed mb-2">${item.summary}</p>
-        <div class="flex flex-wrap gap-1">
-          ${(item.tags || []).map(t => `<span class="px-1.5 py-0.5 bg-gray-50 border border-gray-200 text-[10px] text-gray-500 rounded">#${t}</span>`).join('')}
-        </div>
-      </div>
-    `).join('');
+      `;
+    }).join('');
   }
 
   openFromCodex(nodeId) {
@@ -5205,16 +5560,16 @@ window.addEventListener('DOMContentLoaded', () => {
 
 </script>
 
-  <!-- Initialize quick sidebar navigation for Stepper -->
+  <!-- Quick Nav Script -->
   <script>
     window.addEventListener('DOMContentLoaded', () => {
       const quickNav = document.getElementById('stepper-quick-nav');
       if (quickNav && window.MARKOV_DATA) {
         quickNav.innerHTML = window.MARKOV_DATA.map(item => `
-          <button onclick="window.APP.renderStepper('${item.id}')" 
-            class="w-full text-left px-2.5 py-1.5 rounded-lg text-xs hover:bg-blue-50 hover:text-blue-700 transition flex items-center justify-between group">
-            <span class="truncate font-medium text-gray-700 group-hover:text-blue-700">${item.title.split(':')[0]}</span>
-            <span class="text-[10px] text-gray-400 font-mono">§${item.section}</span>
+          <button onclick="window.APP.renderStepper('${item.id}')" data-id="${item.id}"
+            class="stepper-nav-item w-full text-left px-3 py-2 rounded-xl text-xs transition flex items-center justify-between border border-transparent hover:border-slate-700 hover:bg-slate-800/70 group">
+            <span class="truncate font-medium group-hover:text-sky-300">${item.title.split(':')[0]}</span>
+            <span class="text-[10px] text-slate-500 font-mono ml-2">§${item.section}</span>
           </button>
         `).join('');
       }
