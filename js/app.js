@@ -45,6 +45,14 @@ class MarkovApp {
       }
     });
 
+    if (viewName === 'lecture') {
+      const contentEl = document.getElementById('lecture-content');
+      if (contentEl && !contentEl.innerHTML && window.MASTERCLASS_HTML) {
+        contentEl.innerHTML = window.MASTERCLASS_HTML;
+      }
+      setTimeout(() => this.typesetMath(), 50);
+    }
+
     if (viewName === 'graph' && this.graphInstance) {
       setTimeout(() => this.graphInstance.resize(), 50);
     }

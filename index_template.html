@@ -99,6 +99,10 @@
 
         <!-- Navigation Tabs -->
         <nav class="flex space-x-1 bg-slate-900/90 border border-slate-800 p-1 rounded-xl shadow-inner">
+          <button data-view="lecture" class="nav-tab-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:bg-slate-800/60 transition flex items-center space-x-1.5 border border-amber-500/40 bg-amber-500/10">
+            <span>🎓</span>
+            <span class="text-amber-300 font-bold">1.2-1.4 通关课</span>
+          </button>
           <button data-view="graph" class="nav-tab-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-600/90 text-white transition flex items-center space-x-1.5 shadow-sm">
             <span>🌐</span>
             <span>拓扑星系</span>
@@ -395,6 +399,11 @@
         </div>
 
       </div>
+    </div>
+
+    <!-- VIEW 0: Masterclass Lecture View (§1.2 - §1.4) -->
+    <div id="view-lecture" class="view-section hidden flex-1 flex flex-col">
+      <div id="lecture-content"></div>
     </div>
 
     <!-- VIEW 4: Searchable Codex & Exercises View -->
